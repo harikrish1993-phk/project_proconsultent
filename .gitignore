@@ -1,0 +1,19 @@
+# Environment
+.env
+.env.local
+
+# Uploads
+uploads/*
+!uploads/.gitkeep
+
+# Development
+dev_tools/
+*.log
+
+# Mac/Windows
+.DS_Store
+Thumbs.db
+
+# Backups
+*.sql
+*.bak

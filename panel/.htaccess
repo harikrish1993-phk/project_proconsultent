@@ -1,0 +1,13 @@
+<IfModule mod_rewrite.c>
+
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^([^\.]+)$ $1.php [NC,L]
+RewriteRule ^([^\.]+)$ $1.html [NC,L]
+
+</IfModule>
+
+# Deny access to db_conn.php
+<Files "db_conn.php">
+Deny from all
+</Files>

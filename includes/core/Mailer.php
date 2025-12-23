@@ -30,8 +30,8 @@ class Mailer {
             $this->mail->isSMTP();
             $this->mail->Host       = SMTP_HOST;
             $this->mail->SMTPAuth   = true;
-            $this->mail->Username   = SMTP_USERNAME;
-            $this->mail->Password   = SMTP_PASSWORD;
+            $this->mail->Username   = SMTP_USER;
+            $this->mail->Password   = SMTP_PASS;
             $this->mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS; // Use ENCRYPTION_SMTPS for port 465
             $this->mail->Port       = SMTP_PORT;
             $this->mail->CharSet    = 'UTF-8';

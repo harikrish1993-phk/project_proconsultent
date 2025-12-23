@@ -6,7 +6,15 @@
  * This file provides a consistent header for all modules
  * Includes sidebar navigation and starts the content area
  */
+session_start();
+require_once __DIR__ . '/../core/config/config.php';
+require_once __DIR__ . '/../core/classes/Database.php';
 
+// Check authentication
+if (!isset($_SESSION['user_id']) && basename($_SERVER['PHP_SELF']) !== 'login.php') {
+    header('Location: /panel/login.php');
+    exit;
+}
 // Security check
 if (!defined('MODULE_BOOTSTRAP_LOADED')) {
     die('Direct access not permitted. Please use proper module entry point.');

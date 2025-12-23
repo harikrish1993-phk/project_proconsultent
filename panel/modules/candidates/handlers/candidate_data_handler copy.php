@@ -2,14 +2,9 @@
 /**
  * Candidate Data Handler - Server-side processing with ALL filters
  */
-require_once __DIR__ . '/../../../../includes/config/config.php';
-require_once __DIR__ . '/../../../../includes/core/Auth.php';
-require_once __DIR__ . '/../../../../includes/core/Database.php';
+require_once __DIR__ . '/../_common.php';
 
 try {
-    if (!Auth::check()) throw new Exception('Unauthorized');
-    
-    if (Auth::token() !== ($_GET['token'] ?? '')) throw new Exception('Invalid token');
 
 $user = Auth::user();
 $db = Database::getInstance();

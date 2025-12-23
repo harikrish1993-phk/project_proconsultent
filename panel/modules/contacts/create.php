@@ -2,6 +2,18 @@
 // Load common bootstrap
 require_once __DIR__ . '/../_common.php';
 
+$pageTitle = 'Add Contact';
+$breadcrumbs = [
+    'Contact' => '#'
+];
+// Include header
+// Include header
+require_once ROOT_PATH . '/panel/includes/header.php';
+require_once ROOT_PATH . '/panel/components/ui_components.php';
+
+// Display breadcrumb
+echo renderBreadcrumb($breadcrumbs);
+
 $db = Database::getInstance();
 $conn = $db->getConnection();
 

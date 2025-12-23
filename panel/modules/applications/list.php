@@ -1,7 +1,16 @@
 <?php
-require_once '../../includes/core/Auth.php';
-require_once '../../includes/config/config.php';
-requireLogin();
+require_once __DIR__ . '/../_common.php';
+// Page configuration
+$pageTitle = 'Applications List';
+$breadcrumbs = [
+    'Application' => '#'
+];
+// Include header
+require_once ROOT_PATH . '/panel/includes/header.php';
+require_once ROOT_PATH . '/panel/components/ui_components.php';
+
+// Display breadcrumb
+echo renderBreadcrumb($breadcrumbs);
 
 $conn = dbConnect();
 

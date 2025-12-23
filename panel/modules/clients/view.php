@@ -7,6 +7,17 @@
 
 // Load common bootstrap
 require_once __DIR__ . '/../_common.php';
+// Page configuration
+$pageTitle = 'View Client';
+$breadcrumbs = [
+    'Client' => '#'
+];
+// Include header
+require_once ROOT_PATH . '/panel/includes/header.php';
+require_once ROOT_PATH . '/panel/components/ui_components.php';
+
+// Display breadcrumb
+echo renderBreadcrumb($breadcrumbs);
 
 // Get client ID from index.php
 if (!isset($id) || !$id) {

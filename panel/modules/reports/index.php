@@ -6,8 +6,17 @@
 
 // Load common bootstrap
 require_once __DIR__ . '/../_common.php';
+$pageTitle = 'Reports';
+$breadcrumbs = [
+    'Reports' => '#'
+];
+// Include header
+require_once ROOT_PATH . '/panel/includes/header.php';
+require_once ROOT_PATH . '/panel/components/ui_components.php';
 require_once __DIR__ . '/../../../includes/core/Settings.php';
 
+// Display breadcrumb
+echo renderBreadcrumb($breadcrumbs);
 
 $user = Auth::user();
 $report_type = $_GET['type'] ?? 'daily';

@@ -7,6 +7,15 @@
 
 // Load common bootstrap
 require_once __DIR__ . '/../_common.php';
+// Page configuration
+$pageTitle = 'Add Team Member';
+$breadcrumbs = [
+    'Team' => '#'
+];
+
+// Include header
+require_once ROOT_PATH . '/panel/includes/header.php';
+require_once ROOT_PATH . '/panel/components/ui_components.php';
 ?>
 
 <div class="container-xxl flex-grow-1 container-p-y">

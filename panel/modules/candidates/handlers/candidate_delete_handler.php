@@ -1,9 +1,6 @@
 <?php
-require_once __DIR__ . '/../../../includes/config/config.php';
-require_once __DIR__ . '/../../../includes/core/Auth.php';
-require_once __DIR__ . '/../../../includes/core/Database.php';
+require_once __DIR__ . '/../_common.php';
 try {
-    Auth::check();
 
 $conn = Database::getInstance()->getConnection();
 $can_code = $_POST['can_code'];

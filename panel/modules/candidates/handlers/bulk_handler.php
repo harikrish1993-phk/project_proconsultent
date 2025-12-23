@@ -1,12 +1,9 @@
 <?php
 // modules/candidates/handlers/bulk_handler.php
-require_once __DIR__ . '/../../../includes/config/config.php';
-require_once __DIR__ . '/../../../includes/core/Auth.php';
-require_once __DIR__ . '/../../../includes/core/Database.php';
+require_once __DIR__ . '/../_common.php';
 
 header('Content-Type: application/json');
 
-Auth::check();
 
 $conn = Database::getInstance()->getConnection();
 $action = $_POST['action'];

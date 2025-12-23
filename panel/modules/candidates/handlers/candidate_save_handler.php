@@ -2,11 +2,7 @@
 /**
  * Candidate Save Handler - Create and Update
  */
-require_once __DIR__ . '/../../../../includes/config/config.php';
-require_once __DIR__ . '/../../../../includes/core/Auth.php';
-require_once __DIR__ . '/../../../../includes/core/Database.php';
-
-Auth::check();
+require_once __DIR__ . '/../_common.php';
 
 $conn = Database::getInstance()->getConnection();
 $user = Auth::user();

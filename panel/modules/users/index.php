@@ -7,6 +7,18 @@
 
 // Load common bootstrap
 require_once __DIR__ . '/../_common.php';
+// Page configuration
+// Page configuration
+$pageTitle = 'Team Management';
+$breadcrumbs = [
+    'Users' => '#'
+];
+// Include header
+require_once ROOT_PATH . '/panel/includes/header.php';
+require_once ROOT_PATH . '/panel/components/ui_components.php';
+
+// Display breadcrumb
+echo renderBreadcrumb($breadcrumbs);
 
 if (Auth::user()['level'] !== 'admin') {
     header('Location: ../../dashboard.php');

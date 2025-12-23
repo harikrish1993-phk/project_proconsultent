@@ -2,6 +2,23 @@
 // modules/candidates/list.php
 // Load common bootstrap
 require_once __DIR__ . '/../_common.php';
+// Page configuration
+$pageTitle = 'Candidates';
+$breadcrumbs = [
+    'Candidates' => '#'
+];
+// Include header
+require_once ROOT_PATH . '/panel/includes/header.php';
+require_once ROOT_PATH . '/panel/components/ui_components.php';
+
+// Display breadcrumb
+echo renderBreadcrumb($breadcrumbs);
+
+// Page configuration
+$pageTitle = 'Candidates';
+$breadcrumbs = [
+    'Candidates' => '#'
+];
 
 try {
     $db = Database::getInstance();

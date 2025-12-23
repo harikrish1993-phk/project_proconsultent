@@ -1,9 +1,9 @@
 <?php
 // Load common bootstrap
 require_once __DIR__ . '/../_common.php';
+
 try {
-    if (!Auth::check() || Auth::token() !== ($_POST['token'] ?? '')) throw new Exception('Unauthorized');
-    
+
     $action = $_POST['action'] ?? '';
     $id = $_POST['id'] ?? '';
     

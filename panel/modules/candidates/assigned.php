@@ -2,6 +2,17 @@
 // Assigned Candidates Management
 // Load common bootstrap
 require_once __DIR__ . '/../_common.php';
+// Page configuration
+$pageTitle = 'Candidates';
+$breadcrumbs = [
+    'Candidates' => '#'
+];
+// Include header
+require_once ROOT_PATH . '/panel/includes/header.php';
+require_once ROOT_PATH . '/panel/components/ui_components.php';
+
+// Display breadcrumb
+echo renderBreadcrumb($breadcrumbs);
 $db = Database::getInstance();
 $conn = $db->getConnection();
 

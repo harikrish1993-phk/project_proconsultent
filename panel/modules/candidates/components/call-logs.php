@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../_common.php';
 $can_code = $id ?? null;
 if (!$can_code) return;
 

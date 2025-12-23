@@ -3,17 +3,10 @@
  * Duplicate Check API
  * Check if email already exists
  */
-
-require_once __DIR__ . '/../../../../includes/config/config.php';
-require_once __DIR__ . '/../../../../includes/core/Auth.php';
-require_once __DIR__ . '/../../../../includes/core/Database.php';
+require_once __DIR__ . '/../_common.php';
 
 header('Content-Type: application/json');
 
-if (!Auth::check()) {
-    echo json_encode(['exists' => false, 'error' => 'Unauthorized']);
-    exit();
-}
 
 $email = $_GET['email'] ?? '';
 $exclude_code = $_GET['exclude'] ?? ''; // For edit mode

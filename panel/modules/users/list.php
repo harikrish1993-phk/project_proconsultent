@@ -7,6 +7,18 @@
 
 // Load common bootstrap
 require_once __DIR__ . '/../_common.php';
+// Page configuration
+
+$pageTitle = 'Team List';
+$breadcrumbs = [
+    'Team' => '#'
+];
+// Include header
+require_once ROOT_PATH . '/panel/includes/header.php';
+require_once ROOT_PATH . '/panel/components/ui_components.php';
+
+// Display breadcrumb
+echo renderBreadcrumb($breadcrumbs);
 
 // Fetch users with statistics
 $users_query = "

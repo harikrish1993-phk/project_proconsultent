@@ -1,6 +1,17 @@
 <?php
 // Load common bootstrap
 require_once __DIR__ . '/../_common.php';
+// Page configuration
+$pageTitle = 'Jobs Status';
+$breadcrumbs = [
+    'Jobs' => '#'
+];
+// Include header
+require_once ROOT_PATH . '/panel/includes/header.php';
+require_once ROOT_PATH . '/panel/components/ui_components.php';
+
+// Display breadcrumb
+echo renderBreadcrumb($breadcrumbs);
 
 try {
     $db = Database::getInstance();

@@ -3,9 +3,7 @@
  * Reject Application with Reason
  */
 
-require_once '../../../includes/core/Auth.php';
-require_once '../../../includes/config/config.php';
-requireLogin();
+require_once __DIR__ . '/../_common.php';
 
 header('Content-Type: application/json');
 

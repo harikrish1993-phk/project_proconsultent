@@ -3,9 +3,12 @@
  * Rejected Applications - For analysis and future reference
  */
 
-require_once '../../includes/core/Auth.php';
-require_once '../../includes/config/config.php';
-requireLogin();
+require_once __DIR__ . '/../_common.php';
+// Page configuration
+$pageTitle = 'Applications Rejected';
+$breadcrumbs = [
+    'Application' => '#'
+];
 
 $conn = dbConnect();
 

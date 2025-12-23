@@ -4,18 +4,10 @@
  * Handles status changes with automatic activity logging
  */
 
-require_once __DIR__ . '/../../../../includes/config/config.php';
-require_once __DIR__ . '/../../../../includes/core/Auth.php';
-require_once __DIR__ . '/../../../../includes/core/Database.php';
+require_once __DIR__ . '/../_common.php';
 
 header('Content-Type: application/json');
 
-// Check authentication
-if (!Auth::check()) {
-    http_response_code(401);
-    echo json_encode(['success' => false, 'message' => 'Unauthorized']);
-    exit();
-}
 
 $user = Auth::user();
 $db = Database::getInstance();

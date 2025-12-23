@@ -1,10 +1,6 @@
 <?php
-require_once '../../includes/auth.php';
-require_once '../../includes/db.php';
-require_once '../../includes/header.php';
-
-Auth::requireLogin();
-
+// Load common bootstrap
+require_once __DIR__ . '/../_common.php';
 $db = Database::getInstance();
 $conn = $db->getConnection();
 $userId = Auth::userId();

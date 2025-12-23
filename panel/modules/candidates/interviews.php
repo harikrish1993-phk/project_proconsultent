@@ -1,14 +1,7 @@
 <?php
 // modules/candidates/interviews.php
-require_once __DIR__ . '/../../../includes/config/config.php';
-require_once __DIR__ . '/../../../includes/core/Auth.php';
-require_once __DIR__ . '/../../../includes/core/Database.php';
-require_once __DIR__ . '/../../../includes/header.php';
-
-if (!Auth::check()) {
-    header('Location: ../../../login.php');
-    exit();
-}
+// Load common bootstrap
+require_once __DIR__ . '/../_common.php';
 
 $can_id = $_GET['can_id'] ?? null; // Optional for candidate-specific
 

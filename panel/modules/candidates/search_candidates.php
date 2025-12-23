@@ -1,14 +1,7 @@
 <?php
-require_once __DIR__ . '/../../../includes/config/config.php';
-require_once __DIR__ . '/../../../includes/core/Auth.php';
-require_once __DIR__ . '/../../../includes/core/Database.php';
-
+// Load common bootstrap
+require_once __DIR__ . '/../_common.php';
 header('Content-Type: application/json');
-
-if (!Auth::check()) {
-    echo json_encode(['error' => 'Unauthorized']);
-    exit();
-}
 
 $query = $_POST['query'] ?? '';
 

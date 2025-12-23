@@ -1,12 +1,13 @@
 <?php
 /**
- * Enhanced Authentication Class with Security Features
+ * STANDALONE Authentication Class
+ * Works with BOTH plain text and bcrypt passwords
+ * No external dependencies (Session.php, ActivityLogger.php)
  */
-require_once __DIR__ . '/Session.php';
-require_once __DIR__ . '/ActivityLogger.php';
 
 class Auth {
     private static $conn = null;
+    private static $sessionStarted = false;
     
     private static function initDB() {
         if (self::$conn === null) {
@@ -20,25 +21,36 @@ class Auth {
         return true;
     }
     
+    private static function startSession() {
+        if (self::$sessionStarted) return true;
+        if (session_status() === PHP_SESSION_NONE) {
+            session_name('proconsultancy_session');
+            session_start();
+            self::$sessionStarted = true;
+        }
+        return true;
+    }
+    
     /**
-     * Login with enhanced security
+     * Check if password is bcrypt hash
+     */
+    private static function isBcryptHash($password) {
+        return (strlen($password) === 60 && substr($password, 0, 4) === '$2y$');
+    }
+    
+    /**
+     * Login with support for both plain text and bcrypt
      */
     public static function login($identifier, $password, $rememberMe = false) {
         try {
             self::initDB();
-            Session::start();
+            self::startSession();
             
-            // Check if account is locked
-            $lockCheck = self::checkAccountLock($identifier);
-            if ($lockCheck['locked']) {
-                return [
-                    'success' => false,
-                    'message' => 'Account temporarily locked due to multiple failed attempts. Try again in ' . 
-                                ceil($lockCheck['remaining'] / 60) . ' minutes.'
-                ];
-            }
+            error_log("=== LOGIN ATTEMPT ===");
+            error_log("Identifier: $identifier");
+            error_log("Password length: " . strlen($password));
             
-            // Find user
+            // Find user by user_code OR email
             $stmt = self::$conn->prepare(
                 "SELECT * FROM user 
                 WHERE (user_code = ? OR email = ?) 
@@ -50,94 +62,105 @@ class Auth {
             $result = $stmt->get_result();
             
             if ($result->num_rows !== 1) {
-                self::recordFailedAttempt($identifier);
+                error_log("LOGIN FAILED: User not found - $identifier");
                 return ['success' => false, 'message' => 'Invalid credentials'];
             }
             
             $user = $result->fetch_assoc();
+            error_log("User found: " . $user['user_code']);
+            error_log("DB password: " . substr($user['password'], 0, 20) . "... (length: " . strlen($user['password']) . ")");
             
-            // Verify password
-            if (!password_verify($password, $user['password'])) {
-                self::recordFailedAttempt($user['user_code']);
-                ActivityLogger::log('failed_login', 'user', $user['user_code'], [
-                    'reason' => 'invalid_password'
-                ]);
+            // Check password - support BOTH plain text and bcrypt
+            $passwordValid = false;
+            $needsUpgrade = false;
+            
+            if (self::isBcryptHash($user['password'])) {
+                // Password is bcrypt hash
+                error_log("Password type: BCRYPT");
+                $passwordValid = password_verify($password, $user['password']);
+                error_log("Bcrypt verify result: " . ($passwordValid ? 'TRUE' : 'FALSE'));
+            } else {
+                // Password is plain text
+                error_log("Password type: PLAIN TEXT");
+                error_log("Comparing: '$password' === '{$user['password']}'");
+                $passwordValid = ($password === $user['password']);
+                error_log("Plain text compare result: " . ($passwordValid ? 'TRUE' : 'FALSE'));
+                $needsUpgrade = true;
+            }
+            
+            if (!$passwordValid) {
+                error_log("LOGIN FAILED: Invalid password for user: {$user['user_code']}");
                 return ['success' => false, 'message' => 'Invalid credentials'];
             }
             
-            // Check if password needs rehashing (if algorithm updated)
-            if (password_needs_rehash($user['password'], PASSWORD_DEFAULT)) {
+            error_log("Password verified successfully!");
+            
+            // SECURITY UPGRADE: If password was plain text, upgrade to bcrypt
+            if ($needsUpgrade) {
                 $newHash = password_hash($password, PASSWORD_DEFAULT);
                 $updateStmt = self::$conn->prepare("UPDATE user SET password = ? WHERE user_code = ?");
                 $updateStmt->bind_param('ss', $newHash, $user['user_code']);
-                $updateStmt->execute();
+                if ($updateStmt->execute()) {
+                    error_log("Password upgraded to bcrypt for: {$user['user_code']}");
+                } else {
+                    error_log("Failed to upgrade password: " . $updateStmt->error);
+                }
             }
-            
-            // Clear failed attempts
-            self::clearFailedAttempts($user['user_code']);
             
             // Generate secure token
             $token = bin2hex(random_bytes(32));
+            error_log("Generated token: " . substr($token, 0, 20) . "...");
+            
+            // Store token in database
+            $tokenExpiry = defined('TOKEN_EXPIRY') ? TOKEN_EXPIRY : 86400; // 24 hours default
+            
+            $ipAddress = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+            $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown';
+            
             $stmt = self::$conn->prepare(
-                "INSERT INTO tokens 
-                (user_code, token, expires_at, ip_address, user_agent) 
+                "INSERT INTO tokens (user_code, token, expires_at, ip_address, user_agent) 
                 VALUES (?, ?, DATE_ADD(NOW(), INTERVAL ? SECOND), ?, ?)"
             );
-            
-            $ipAddress = $_SERVER['REMOTE_ADDR'] ?? null;
-            $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? null;
-            
-            $stmt->bind_param(
-                "ssiss",
-                $user['user_code'],
-                $token,
-                TOKEN_EXPIRY,
-                $ipAddress,
-                $userAgent
-            );
+            $stmt->bind_param('ssiss', $user['user_code'], $token, $tokenExpiry, $ipAddress, $userAgent);
             
             if (!$stmt->execute()) {
-                throw new Exception('Token creation failed');
+                error_log("Token insertion failed: " . $stmt->error);
+                throw new Exception('Token creation failed: ' . $stmt->error);
             }
             
-            // Regenerate session ID (prevent session fixation)
-            Session::regenerate();
+            error_log("Token inserted into database");
+            
+            // Regenerate session ID for security
+            session_regenerate_id(true);
+            error_log("Session regenerated");
             
             // Set session variables
-            Session::set('payroll_token', $token);
-            Session::set('authenticated', true);
-            Session::set('user_id', $user['id']);
-            Session::set('user_code', $user['user_code']);
-            Session::set('user_name', $user['name']);
-            Session::set('user_email', $user['email']);
-            Session::set('user_level', $user['level']);
-            Session::set('login_time', time());
+            $_SESSION['payroll_token'] = $token;
+            $_SESSION['authenticated'] = true;
+            $_SESSION['user_id'] = $user['id'];
+            $_SESSION['user_code'] = $user['user_code'];
+            $_SESSION['user_name'] = $user['name'];
+            $_SESSION['user_email'] = $user['email'];
+            $_SESSION['user_level'] = $user['level'];
+            $_SESSION['login_time'] = time();
+            $_SESSION['ip_address'] = $ipAddress;
             
-            // Set cookie if remember me
+            error_log("Session variables set");
+            
+            // Set cookie for remember me
             if ($rememberMe) {
-                setcookie(
-                    'payroll_token',
-                    $token,
-                    time() + TOKEN_EXPIRY,
-                    '/',
-                    '',
-                    ENVIRONMENT === 'production',
-                    true
-                );
+                $cookieSet = setcookie('payroll_token', $token, time() + $tokenExpiry, '/', '', false, true);
+                error_log("Remember me cookie set: " . ($cookieSet ? 'YES' : 'NO'));
             }
             
             // Update last login
-            $updateLoginStmt = self::$conn->prepare(
-                "UPDATE user SET last_login = NOW() WHERE user_code = ?"
-            );
-            $updateLoginStmt->bind_param('s', $user['user_code']);
-            $updateLoginStmt->execute();
+            $updateStmt = self::$conn->prepare("UPDATE user SET last_login = NOW() WHERE user_code = ?");
+            $updateStmt->bind_param('s', $user['user_code']);
+            $updateStmt->execute();
             
-            // Log activity
-            ActivityLogger::log('login', 'user', $user['user_code'], [
-                'method' => 'password',
-                'remember_me' => $rememberMe
-            ]);
+            error_log("=== LOGIN SUCCESSFUL ===");
+            error_log("User: {$user['user_code']} ({$user['name']})");
+            error_log("Level: {$user['level']}");
             
             return [
                 'success' => true,
@@ -150,120 +173,12 @@ class Auth {
             ];
             
         } catch (Exception $e) {
-            error_log("Auth login error: " . $e->getMessage());
+            error_log("=== LOGIN EXCEPTION ===");
+            error_log("Error: " . $e->getMessage());
+            error_log("File: " . $e->getFile());
+            error_log("Line: " . $e->getLine());
+            error_log("Trace: " . $e->getTraceAsString());
             return ['success' => false, 'message' => 'Login failed. Please try again.'];
-        }
-    }
-    
-    /**
-     * Check account lock status
-     */
-    private static function checkAccountLock($identifier) {
-        try {
-            self::initDB();
-            
-            $stmt = self::$conn->prepare(
-                "SELECT failed_login_attempts, locked_until 
-                FROM user 
-                WHERE user_code = ? OR email = ? 
-                LIMIT 1"
-            );
-            $stmt->bind_param('ss', $identifier, $identifier);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            
-            if ($result->num_rows === 0) {
-                return ['locked' => false];
-            }
-            
-            $data = $result->fetch_assoc();
-            
-            if ($data['locked_until'] && strtotime($data['locked_until']) > time()) {
-                return [
-                    'locked' => true,
-                    'remaining' => strtotime($data['locked_until']) - time()
-                ];
-            }
-            
-            // If lock expired, clear it
-            if ($data['locked_until'] && strtotime($data['locked_until']) <= time()) {
-                self::clearFailedAttempts($identifier);
-            }
-            
-            return ['locked' => false];
-            
-        } catch (Exception $e) {
-            error_log("Check account lock error: " . $e->getMessage());
-            return ['locked' => false];
-        }
-    }
-    
-    /**
-     * Record failed login attempt
-     */
-    private static function recordFailedAttempt($identifier) {
-        try {
-            self::initDB();
-            
-            $stmt = self::$conn->prepare(
-                "UPDATE user 
-                SET failed_login_attempts = failed_login_attempts + 1 
-                WHERE user_code = ? OR email = ?"
-            );
-            $stmt->bind_param('ss', $identifier, $identifier);
-            $stmt->execute();
-            
-            // Check if should lock account
-            $stmt = self::$conn->prepare(
-                "SELECT failed_login_attempts, user_code 
-                FROM user 
-                WHERE user_code = ? OR email = ?"
-            );
-            $stmt->bind_param('ss', $identifier, $identifier);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            
-            if ($result->num_rows > 0) {
-                $data = $result->fetch_assoc();
-                
-                if ($data['failed_login_attempts'] >= LOGIN_MAX_ATTEMPTS) {
-                    // Lock account
-                    $lockStmt = self::$conn->prepare(
-                        "UPDATE user 
-                        SET locked_until = DATE_ADD(NOW(), INTERVAL ? SECOND) 
-                        WHERE user_code = ?"
-                    );
-                    $lockStmt->bind_param('is', LOGIN_LOCKOUT_TIME, $data['user_code']);
-                    $lockStmt->execute();
-                    
-                    ActivityLogger::log('account_locked', 'user', $data['user_code'], [
-                        'reason' => 'max_failed_attempts'
-                    ]);
-                }
-            }
-            
-        } catch (Exception $e) {
-            error_log("Record failed attempt error: " . $e->getMessage());
-        }
-    }
-    
-    /**
-     * Clear failed login attempts
-     */
-    private static function clearFailedAttempts($identifier) {
-        try {
-            self::initDB();
-            
-            $stmt = self::$conn->prepare(
-                "UPDATE user 
-                SET failed_login_attempts = 0, locked_until = NULL 
-                WHERE user_code = ? OR email = ?"
-            );
-            $stmt->bind_param('ss', $identifier, $identifier);
-            $stmt->execute();
-            
-        } catch (Exception $e) {
-            error_log("Clear failed attempts error: " . $e->getMessage());
         }
     }
     
@@ -272,11 +187,12 @@ class Auth {
      */
     public static function check() {
         try {
-            Session::start();
+            self::startSession();
             
-            $token = Session::get('payroll_token');
-            if (!$token) {
-                $token = $_COOKIE['payroll_token'] ?? null;
+            // Get token from session or cookie
+            $token = $_SESSION['payroll_token'] ?? null;
+            if (!$token && isset($_COOKIE['payroll_token'])) {
+                $token = $_COOKIE['payroll_token'];
             }
             
             if (!$token) {
@@ -285,6 +201,7 @@ class Auth {
             
             self::initDB();
             
+            // Verify token in database
             $stmt = self::$conn->prepare(
                 "SELECT u.*, t.expires_at 
                 FROM user u 
@@ -301,19 +218,19 @@ class Auth {
             
             $data = $result->fetch_assoc();
             
-            // Check token expiration
+            // Check if token expired
             if (strtotime($data['expires_at']) < time()) {
                 self::logout();
                 return false;
             }
             
             // Refresh session variables
-            Session::set('authenticated', true);
-            Session::set('user_id', $data['id']);
-            Session::set('user_code', $data['user_code']);
-            Session::set('user_name', $data['name']);
-            Session::set('user_email', $data['email']);
-            Session::set('user_level', $data['level']);
+            $_SESSION['authenticated'] = true;
+            $_SESSION['user_id'] = $data['id'];
+            $_SESSION['user_code'] = $data['user_code'];
+            $_SESSION['user_name'] = $data['name'];
+            $_SESSION['user_email'] = $data['email'];
+            $_SESSION['user_level'] = $data['level'];
             
             return true;
             
@@ -327,17 +244,17 @@ class Auth {
      * Get current user data
      */
     public static function user() {
-        Session::start();
+        self::startSession();
         if (!self::check()) {
             return null;
         }
         
         return [
-            'id' => Session::get('user_id'),
-            'user_code' => Session::get('user_code'),
-            'name' => Session::get('user_name'),
-            'email' => Session::get('user_email'),
-            'level' => Session::get('user_level'),
+            'id' => $_SESSION['user_id'] ?? null,
+            'user_code' => $_SESSION['user_code'] ?? null,
+            'name' => $_SESSION['user_name'] ?? null,
+            'email' => $_SESSION['user_email'] ?? null,
+            'level' => $_SESSION['user_level'] ?? null,
         ];
     }
     
@@ -345,8 +262,8 @@ class Auth {
      * Get current token
      */
     public static function token() {
-        Session::start();
-        return Session::get('payroll_token', '');
+        self::startSession();
+        return $_SESSION['payroll_token'] ?? '';
     }
     
     /**
@@ -354,10 +271,9 @@ class Auth {
      */
     public static function logout() {
         try {
-            Session::start();
+            self::startSession();
             
-            $token = Session::get('payroll_token', '');
-            $userCode = Session::get('user_code');
+            $token = $_SESSION['payroll_token'] ?? '';
             
             if ($token && self::initDB()) {
                 // Delete token from database
@@ -366,21 +282,108 @@ class Auth {
                 $stmt->execute();
             }
             
-            // Log activity
-            if ($userCode) {
-                ActivityLogger::log('logout', 'user', $userCode);
-            }
+            // Clear session
+            $_SESSION = [];
             
             // Clear cookie
             if (isset($_COOKIE['payroll_token'])) {
-                setcookie('payroll_token', '', time() - 3600, '/', '', ENVIRONMENT === 'production', true);
+                setcookie('payroll_token', '', time() - 3600, '/', '', false, true);
             }
             
             // Destroy session
-            Session::destroy();
+            session_destroy();
+            self::$sessionStarted = false;
             
         } catch (Exception $e) {
             error_log("Logout error: " . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Change user password
+     */
+    public static function changePassword($userCode, $oldPassword, $newPassword) {
+        try {
+            self::initDB();
+            
+            // Get current user
+            $stmt = self::$conn->prepare("SELECT password FROM user WHERE user_code = ?");
+            $stmt->bind_param('s', $userCode);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            if ($result->num_rows !== 1) {
+                return ['success' => false, 'message' => 'User not found'];
+            }
+            
+            $user = $result->fetch_assoc();
+            
+            // Verify old password (support both plain text and bcrypt)
+            $passwordValid = false;
+            if (self::isBcryptHash($user['password'])) {
+                $passwordValid = password_verify($oldPassword, $user['password']);
+            } else {
+                $passwordValid = ($oldPassword === $user['password']);
+            }
+            
+            if (!$passwordValid) {
+                return ['success' => false, 'message' => 'Current password is incorrect'];
+            }
+            
+            // Hash new password
+            $newHash = password_hash($newPassword, PASSWORD_DEFAULT);
+            
+            // Update password
+            $stmt = self::$conn->prepare("UPDATE user SET password = ? WHERE user_code = ?");
+            $stmt->bind_param('ss', $newHash, $userCode);
+            
+            if ($stmt->execute()) {
+                return ['success' => true, 'message' => 'Password changed successfully'];
+            } else {
+                return ['success' => false, 'message' => 'Failed to update password'];
+            }
+            
+        } catch (Exception $e) {
+            error_log("Change password error: " . $e->getMessage());
+            return ['success' => false, 'message' => 'An error occurred'];
+        }
+    }
+    
+    /**
+     * Reset password (for forgot password flow)
+     */
+    public static function resetPassword($email, $newPassword) {
+        try {
+            self::initDB();
+            
+            // Find user by email
+            $stmt = self::$conn->prepare("SELECT user_code FROM user WHERE email = ?");
+            $stmt->bind_param('s', $email);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            if ($result->num_rows !== 1) {
+                return ['success' => false, 'message' => 'Email not found'];
+            }
+            
+            $user = $result->fetch_assoc();
+            
+            // Hash new password
+            $newHash = password_hash($newPassword, PASSWORD_DEFAULT);
+            
+            // Update password
+            $stmt = self::$conn->prepare("UPDATE user SET password = ? WHERE user_code = ?");
+            $stmt->bind_param('ss', $newHash, $user['user_code']);
+            
+            if ($stmt->execute()) {
+                return ['success' => true, 'message' => 'Password reset successfully'];
+            } else {
+                return ['success' => false, 'message' => 'Failed to reset password'];
+            }
+            
+        } catch (Exception $e) {
+            error_log("Reset password error: " . $e->getMessage());
+            return ['success' => false, 'message' => 'An error occurred'];
         }
     }
 }
@@ -388,8 +391,8 @@ class Auth {
 // Helper functions
 function requireLogin() {
     if (!Auth::check()) {
-        Session::flash('error', 'Please login to continue');
-        redirect('/login.php');
+        header('Location: /login.php');
+        exit();
     }
 }
 

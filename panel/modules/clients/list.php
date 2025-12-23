@@ -5,9 +5,8 @@
  * Included by index.php - DO NOT access directly
  */
 
-if (!defined('Auth')) {
-    die('Direct access not permitted');
-}
+// Load common bootstrap
+require_once __DIR__ . '/../_common.php';
 
 // Fetch all clients
 $query = "

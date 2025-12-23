@@ -4,16 +4,8 @@
  * Fetches and processes data for the Daily Report UI.
  */
 
-require_once __DIR__ . '/../../../includes/config/config.php';
-require_once __DIR__ . '/../../../includes/core/Auth.php';
-require_once __DIR__ . '/../../../includes/core/Database.php';
-
-// Check authentication
-if (!Auth::check()) {
-    header('Content-Type: application/json');
-    echo json_encode(['error' => 'Unauthorized access.']);
-    exit();
-}
+// Load common bootstrap
+require_once __DIR__ . '/../_common.php';
 
 $db = Core\Database::getInstance();
 $conn = $db->getConnection();

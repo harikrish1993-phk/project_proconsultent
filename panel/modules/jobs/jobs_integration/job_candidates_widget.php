@@ -1,4 +1,7 @@
 <?php
+// Load common bootstrap
+require_once __DIR__ . '/../_common.php';
+
 $job_id = $id ?? null;
 if (!$job_id) return;
 

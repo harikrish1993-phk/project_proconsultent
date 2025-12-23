@@ -5,14 +5,8 @@
  * Creates: Candidate + Application in one step
  */
 
-require_once __DIR__ . '/../../../includes/config/config.php';
-require_once __DIR__ . '/../../../includes/core/Auth.php';
-require_once __DIR__ . '/../../../includes/core/Database.php';
-
-if (!Auth::check()) {
-    header('Location: ../../../login.php');
-    exit();
-}
+// Load common bootstrap
+require_once __DIR__ . '/../_common.php';
 
 $db = Database::getInstance();
 $conn = $db->getConnection();

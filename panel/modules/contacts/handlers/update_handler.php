@@ -1,6 +1,6 @@
 <?php
-require_once '../../../includes/auth.php';
-require_once '../../../includes/db.php';
+// Load common bootstrap
+require_once __DIR__ . '/../_common.php';
 
 header('Content-Type: application/json');
 

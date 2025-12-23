@@ -3,9 +3,8 @@
  * Interviewing - Applications in interview stage
  */
 
-require_once '../../includes/core/Auth.php';
-require_once '../../includes/config/config.php';
-requireLogin();
+// Load common bootstrap
+require_once __DIR__ . '/../_common.php';
 
 $conn = dbConnect();
 

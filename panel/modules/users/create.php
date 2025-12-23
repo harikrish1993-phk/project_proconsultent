@@ -5,9 +5,8 @@
  * Included by index.php
  */
 
-if (!defined('Auth')) {
-    die('Direct access not permitted');
-}
+// Load common bootstrap
+require_once __DIR__ . '/../_common.php';
 ?>
 
 <div class="container-xxl flex-grow-1 container-p-y">

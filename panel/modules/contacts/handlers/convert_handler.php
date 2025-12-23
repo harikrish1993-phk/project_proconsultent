@@ -1,15 +1,8 @@
 <?php
-require_once '../../../includes/auth.php';
-require_once '../../../includes/db.php';
-
+// Load common bootstrap
+require_once __DIR__ . '/../_common.php';
 header('Content-Type: application/json');
 
-// Check authentication
-if (!Auth::isLoggedIn()) {
-    http_response_code(401);
-    echo json_encode(['success' => false, 'message' => 'Unauthorized']);
-    exit;
-}
 
 $db = Database::getInstance();
 $conn = $db->getConnection();

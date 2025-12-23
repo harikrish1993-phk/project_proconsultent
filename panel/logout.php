@@ -1,16 +1,16 @@
 <?php
 /**
- * Logout Handler
- * Destroys session and redirects to login
+ * LOGOUT HANDLER (panel/logout.php)
+ * Terminates user session and redirects to login
  */
 
-// Load authentication class
-require_once __DIR__ . '/../includes/core/Auth.php';
+// Load common bootstrap
+require_once __DIR__ . '/../_common.php';
 
-// Logout user
+// Perform logout
 Auth::logout();
 
 // Redirect to login page
-header('Location: /login.php?logged_out=1');
-exit;
+header('Location: ../login.php');
+exit();
 ?>

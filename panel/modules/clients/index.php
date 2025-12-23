@@ -4,15 +4,8 @@
  * File: panel/modules/clients/index.php
  */
 
-require_once __DIR__ . '/../../includes/config/config.php';
-require_once __DIR__ . '/../../includes/core/Auth.php';
-require_once __DIR__ . '/../../includes/core/Database.php';
-
-// Check authentication
-if (!Auth::check()) {
-    header('Location: ../../login.php');
-    exit();
-}
+// Load common bootstrap
+require_once __DIR__ . '/../_common.php';
 
 $user = Auth::user();
 $db = Database::getInstance();

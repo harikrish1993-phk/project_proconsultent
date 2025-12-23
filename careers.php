@@ -1,255 +1,126 @@
 <?php
 /**
- * Public Careers Page
- * Displays all active public job postings
+ * PUBLIC CAREERS PAGE
+ * Simple job listings for public visitors
+ * BUSINESS RULES: Show only public jobs, hide client info, hide salary, Belgium location only
  */
 
-require_once 'includes/config/config.php';
-require_once 'includes/core/Database.php';
+require_once __DIR__ . '/includes/config/config.php';
+require_once __DIR__ . '/includes/core/Database.php';
 
 $db = Database::getInstance();
 $conn = $db->getConnection();
 
-// Get filter parameters
-$location = $_GET['location'] ?? '';
-$employment_type = $_GET['type'] ?? '';
-$search = $_GET['search'] ?? '';
+// Fetch public jobs
+$sql = "SELECT job_ref, job_title, job_description, skills_required, experience_level, created_at
+        FROM jobs 
+        WHERE is_public = 1 AND job_status = 'active' AND job_type = 'freelance'
+        ORDER BY created_at DESC";
 
-// Build query
-$where_clauses = ["job_status = 'active'", "is_public = 1"];
-$params = [];
-$types = '';
-
-if ($location) {
-    $where_clauses[] = "location LIKE ?";
-    $params[] = "%$location%";
-    $types .= 's';
+$result = $conn->query($sql);
+$jobs = [];
+while ($row = $result->fetch_assoc()) {
+    $jobs[] = $row;
 }
-
-if ($employment_type) {
-    $where_clauses[] = "employment_type = ?";
-    $params[] = $employment_type;
-    $types .= 's';
-}
-
-if ($search) {
-    $where_clauses[] = "(job_title LIKE ? OR job_description LIKE ?)";
-    $params[] = "%$search%";
-    $params[] = "%$search%";
-    $types .= 'ss';
-}
-
-$where = implode(' AND ', $where_clauses);
-
-$query = "SELECT 
-    j.job_id,
-    j.job_ref,
-    j.job_title,
-    j.job_description,
-    j.location,
-    j.employment_type,
-    j.remote_type,
-    j.salary_min,
-    j.salary_max,
-    j.salary_currency,
-    j.experience_level,
-    j.created_at,
-    c.company_name
-FROM jobs j
-LEFT JOIN companies c ON j.company_id = c.company_id
-WHERE $where
-ORDER BY j.created_at DESC";
-
-$stmt = $conn->prepare($query);
-if ($types) {
-    $stmt->bind_param($types, ...$params);
-}
-$stmt->execute();
-$result = $stmt->get_result();
-$jobs = $result->fetch_all(MYSQLI_ASSOC);
-
-// Get distinct locations for filter
-$locations_query = "SELECT DISTINCT location FROM jobs WHERE is_public = 1 AND job_status = 'active' ORDER BY location";
-$locations = $conn->query($locations_query)->fetch_all(MYSQLI_ASSOC);
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Careers - ProConsultancy</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <title>Careers - <?php echo COMPANY_NAME; ?></title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        :root {
-            --primary-color: #0d6efd;
-            --secondary-color: #6c757d;
-        }
-        
-        .job-card {
-            transition: transform 0.2s, box-shadow 0.2s;
-            border-left: 4px solid var(--primary-color);
-        }
-        
-        .job-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        }
-        
-        .badge-employment {
-            background-color: #e7f3ff;
-            color: #0d6efd;
-        }
-        
-        .badge-remote {
-            background-color: #d4edda;
-            color: #155724;
-        }
-        
-        .hero-section {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 80px 0;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8f9fa; color: #2d3748; }
+        .header { background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.08); padding: 20px 0; position: sticky; top: 0; z-index: 100; }
+        .header-container { max-width: 1200px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 24px; font-weight: 700; color: #667eea; text-decoration: none; }
+        .nav { display: flex; gap: 25px; align-items: center; }
+        .nav a { color: #4a5568; text-decoration: none; font-weight: 500; transition: color 0.3s; }
+        .nav a:hover { color: #667eea; }
+        .staff-login-btn { background: linear-gradient(135deg, #667eea, #764ba2); color: white !important; padding: 8px 18px; border-radius: 6px; font-size: 14px; }
+        .hero { background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 60px 20px; text-align: center; }
+        .hero h1 { font-size: 42px; margin-bottom: 15px; font-weight: 700; }
+        .hero p { font-size: 18px; opacity: 0.95; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 50px 20px; }
+        .section-title { font-size: 32px; margin-bottom: 40px; text-align: center; }
+        .jobs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 25px; }
+        .job-card { background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.07); transition: all 0.3s; border: 2px solid transparent; }
+        .job-card:hover { transform: translateY(-5px); box-shadow: 0 12px 24px rgba(0,0,0,0.15); border-color: #667eea; }
+        .job-title { font-size: 20px; font-weight: 700; color: #2d3748; margin-bottom: 12px; }
+        .job-description { color: #4a5568; font-size: 14px; margin-bottom: 15px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+        .job-skills { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 15px; }
+        .skill-tag { background: #e6f0ff; color: #667eea; padding: 4px 10px; border-radius: 15px; font-size: 12px; font-weight: 600; }
+        .job-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-top: 12px; border-top: 1px solid #e2e8f0; }
+        .experience-badge { background: #fef3c7; color: #92400e; padding: 4px 10px; border-radius: 5px; font-size: 12px; font-weight: 600; }
+        .job-date { color: #718096; font-size: 12px; }
+        .apply-btn { display: block; width: 100%; padding: 11px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; text-decoration: none; border-radius: 8px; font-weight: 600; text-align: center; transition: all 0.3s; }
+        .apply-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(102, 126, 234, 0.4); }
+        .no-jobs { text-align: center; padding: 60px 20px; }
+        .no-jobs i { font-size: 70px; color: #cbd5e0; margin-bottom: 15px; }
+        .footer { background: #2d3748; color: white; padding: 30px 20px; text-align: center; margin-top: 60px; }
+        @media (max-width: 768px) { .hero h1 { font-size: 28px; } .jobs-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
-    <!-- Header -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom">
-        <div class="container">
-            <a class="navbar-brand fw-bold" href="/">ProConsultancy</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link active" href="careers.php">Careers</a></li>
-                    <li class="nav-item"><a class="nav-link" href="about.php">About</a></li>
-                    <li class="nav-item"><a class="nav-link" href="contact.php">Contact</a></li>
-                </ul>
-            </div>
+    <header class="header">
+        <div class="header-container">
+            <a href="/" class="logo"><?php echo COMPANY_NAME; ?></a>
+            <nav class="nav">
+                <a href="/">Home</a>
+                <a href="careers.php">Careers</a>
+                <a href="login.php" class="staff-login-btn"><i class="fa-solid fa-user-lock"></i> Staff Login</a>
+            </nav>
         </div>
-    </nav>
+    </header>
 
-    <!-- Hero Section -->
-    <div class="hero-section">
-        <div class="container text-center">
-            <h1 class="display-4 fw-bold mb-3">Join Our Team</h1>
-            <p class="lead mb-4">Discover exciting opportunities and build your career with us</p>
-            <p class="h5"><?php echo count($jobs); ?> Open Position<?php echo count($jobs) !== 1 ? 's' : ''; ?></p>
-        </div>
-    </div>
+    <section class="hero">
+        <h1>Join Our Network</h1>
+        <p>Discover exciting freelance opportunities with leading companies in Belgium</p>
+    </section>
 
-    <!-- Filters -->
-    <div class="bg-light py-4">
-        <div class="container">
-            <form method="GET" class="row g-3">
-                <div class="col-md-4">
-                    <input type="text" class="form-control" name="search" placeholder="Search jobs..." value="<?php echo htmlspecialchars($search); ?>">
-                </div>
-                <div class="col-md-3">
-                    <select class="form-select" name="location">
-                        <option value="">All Locations</option>
-                        <?php foreach ($locations as $loc): ?>
-                            <option value="<?php echo htmlspecialchars($loc['location']); ?>" 
-                                <?php echo $location === $loc['location'] ? 'selected' : ''; ?>>
-                                <?php echo htmlspecialchars($loc['location']); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <select class="form-select" name="type">
-                        <option value="">All Types</option>
-                        <option value="full-time" <?php echo $employment_type === 'full-time' ? 'selected' : ''; ?>>Full-time</option>
-                        <option value="part-time" <?php echo $employment_type === 'part-time' ? 'selected' : ''; ?>>Part-time</option>
-                        <option value="contract" <?php echo $employment_type === 'contract' ? 'selected' : ''; ?>>Contract</option>
-                        <option value="temporary" <?php echo $employment_type === 'temporary' ? 'selected' : ''; ?>>Temporary</option>
-                        <option value="internship" <?php echo $employment_type === 'internship' ? 'selected' : ''; ?>>Internship</option>
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <button type="submit" class="btn btn-primary w-100">Search</button>
-                </div>
-            </form>
-        </div>
-    </div>
+    <div class="container">
+        <h2 class="section-title">Available Positions</h2>
 
-    <!-- Jobs Listing -->
-    <div class="container my-5">
-        <?php if (empty($jobs)): ?>
-            <div class="alert alert-info text-center">
-                <i class="bi bi-info-circle me-2"></i>
-                No jobs found matching your criteria. Try adjusting your filters.
-            </div>
-        <?php else: ?>
-            <div class="row">
+        <?php if (count($jobs) > 0): ?>
+            <div class="jobs-grid">
                 <?php foreach ($jobs as $job): ?>
-                    <div class="col-md-6 col-lg-4 mb-4">
-                        <div class="card job-card h-100">
-                            <div class="card-body">
-                                <h5 class="card-title mb-3"><?php echo htmlspecialchars($job['job_title']); ?></h5>
-                                
-                                <?php if ($job['company_name']): ?>
-                                    <p class="text-muted mb-2">
-                                        <i class="bi bi-building me-1"></i>
-                                        <?php echo htmlspecialchars($job['company_name']); ?>
-                                    </p>
-                                <?php endif; ?>
-                                
-                                <p class="text-muted mb-3">
-                                    <i class="bi bi-geo-alt me-1"></i>
-                                    <?php echo htmlspecialchars($job['location']); ?>
-                                </p>
-                                
-                                <div class="mb-3">
-                                    <span class="badge badge-employment me-1">
-                                        <?php echo ucfirst(str_replace('-', ' ', $job['employment_type'])); ?>
-                                    </span>
-                                    <span class="badge badge-remote">
-                                        <?php echo ucfirst($job['remote_type']); ?>
-                                    </span>
-                                </div>
-                                
-                                <p class="card-text text-muted small">
-                                    <?php echo substr(strip_tags($job['job_description']), 0, 150); ?>...
-                                </p>
-                                
-                                <?php if ($job['salary_min'] && $job['salary_max']): ?>
-                                    <p class="text-success fw-bold mb-3">
-                                        <?php echo $job['salary_currency']; ?> 
-                                        <?php echo number_format($job['salary_min']); ?> - 
-                                        <?php echo number_format($job['salary_max']); ?>
-                                    </p>
-                                <?php endif; ?>
-                                
-                                <a href="job-details.php?ref=<?php echo urlencode($job['job_ref']); ?>" 
-                                   class="btn btn-primary btn-sm w-100">
-                                    View Details & Apply
-                                </a>
+                    <div class="job-card">
+                        <h3 class="job-title"><?php echo htmlspecialchars($job['job_title']); ?></h3>
+                        <p class="job-description">
+                            <?php echo htmlspecialchars(substr(strip_tags($job['job_description']), 0, 140)) . '...'; ?>
+                        </p>
+                        <?php if (!empty($job['skills_required'])): ?>
+                            <div class="job-skills">
+                                <?php foreach (array_slice(explode(',', $job['skills_required']), 0, 4) as $skill): ?>
+                                    <span class="skill-tag"><?php echo htmlspecialchars(trim($skill)); ?></span>
+                                <?php endforeach; ?>
                             </div>
-                            <div class="card-footer bg-light text-muted small">
-                                Posted <?php echo date('M d, Y', strtotime($job['created_at'])); ?>
-                            </div>
+                        <?php endif; ?>
+                        <div class="job-meta">
+                            <?php if ($job['experience_level']): ?>
+                                <span class="experience-badge"><?php echo htmlspecialchars($job['experience_level']); ?></span>
+                            <?php endif; ?>
+                            <span class="job-date"><i class="fa-regular fa-clock"></i> <?php echo date('M j', strtotime($job['created_at'])); ?></span>
                         </div>
+                        <a href="job-details.php?ref=<?php echo urlencode($job['job_ref']); ?>" class="apply-btn">
+                            View & Apply <i class="fa-solid fa-arrow-right"></i>
+                        </a>
                     </div>
                 <?php endforeach; ?>
+            </div>
+        <?php else: ?>
+            <div class="no-jobs">
+                <i class="fa-solid fa-briefcase"></i>
+                <h3>No Open Positions</h3>
+                <p>Check back later for new opportunities.</p>
             </div>
         <?php endif; ?>
     </div>
 
-    <!-- Footer -->
-    <footer class="bg-dark text-white py-4 mt-5">
-        <div class="container text-center">
-            <p>&copy; <?php echo date('Y'); ?> ProConsultancy. All rights reserved.</p>
-            <p class="small">
-                <a href="privacy.php" class="text-white-50 me-3">Privacy Policy</a>
-                <a href="terms.php" class="text-white-50">Terms of Service</a>
-            </p>
-        </div>
+    <footer class="footer">
+        <p>&copy; <?php echo date('Y'); ?> <?php echo COMPANY_NAME; ?>. All rights reserved.</p>
     </footer>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

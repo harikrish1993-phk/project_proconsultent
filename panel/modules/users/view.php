@@ -4,6 +4,8 @@
  * File: panel/modules/users/view.php
  * Included by index.php
  */
+// Load common bootstrap
+require_once __DIR__ . '/../_common.php';
 
 if (!defined('Auth')) {
     die('Direct access not permitted');

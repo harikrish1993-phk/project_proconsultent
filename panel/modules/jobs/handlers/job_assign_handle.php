@@ -1,15 +1,8 @@
 <?php
 // modules/jobs/handlers/job_assign_handler.php
-require_once __DIR__ . '/../../../includes/config/config.php';
-require_once __DIR__ . '/../../../includes/core/Auth.php';
-require_once __DIR__ . '/../../../includes/core/Database.php';
-
+// Load common bootstrap
+require_once __DIR__ . '/../_common.php';
 header('Content-Type: application/json');
-
-if (!Auth::check() || Auth::user()['level'] !== 'admin') {
-    echo json_encode(['success' => false, 'message' => 'Permission denied.']);
-    exit();
-}
 
 $db = Database::getInstance();
 $conn = $db->getConnection();

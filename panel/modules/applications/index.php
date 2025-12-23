@@ -4,9 +4,8 @@
  * Central routing for all application-related pages
  */
 
-require_once '../../includes/core/Auth.php';
-require_once '../../includes/config/config.php';
-requireLogin();
+// Load common bootstrap
+require_once __DIR__ . '/../_common.php';
 
 $page = $_GET['page'] ?? 'dashboard';
 

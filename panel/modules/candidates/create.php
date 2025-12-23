@@ -1,10 +1,6 @@
 <?php
-// <div id="parseNotice" class="alert alert-info d-none">
-//     Candidate details were filled from resume.
-//     Please review before saving.
-// </div>
-
-if (!Auth::check()) throw new Exception('Unauthorized');
+// Load common bootstrap
+require_once __DIR__ . '/../_common.php';
 
 $db = Database::getInstance();
 $conn = $db->getConnection();

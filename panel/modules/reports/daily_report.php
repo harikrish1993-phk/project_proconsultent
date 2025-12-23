@@ -5,6 +5,9 @@
  */
 
 // Placeholder for fetching filter options (e.g., all recruiters, job titles)
+// Load common bootstrap
+require_once __DIR__ . '/../_common.php';
+
 $db = Core\Database::getInstance();
 $conn = $db->getConnection();
 

@@ -5,14 +5,9 @@
  * Shows: Job details, Applications, CVs received, Activity
  */
 
-require_once __DIR__ . '/../../includes/config/config.php';
-require_once __DIR__ . '/../../includes/core/Auth.php';
-require_once __DIR__ . '/../../includes/core/Database.php';
+// Load common bootstrap
+require_once __DIR__ . '/../_common.php';
 
-if (!Auth::check()) {
-    header('Location: ../../login.php');
-    exit();
-}
 
 $db = Database::getInstance();
 $conn = $db->getConnection();

@@ -5,15 +5,8 @@
  * Admin only - manages system users
  */
 
-require_once __DIR__ . '/../../includes/config/config.php';
-require_once __DIR__ . '/../../includes/core/Auth.php';
-require_once __DIR__ . '/../../includes/core/Database.php';
-
-// Check authentication and admin access
-if (!Auth::check()) {
-    header('Location: ../../login.php');
-    exit();
-}
+// Load common bootstrap
+require_once __DIR__ . '/../_common.php';
 
 if (Auth::user()['level'] !== 'admin') {
     header('Location: ../../dashboard.php');

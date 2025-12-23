@@ -1,7 +1,7 @@
 <?php
 // modules/jobs/job_assignment_ui.php 
-require_once __DIR__ . '/../../includes/config/config.php';
-require_once __DIR__ . '/../../includes/core/Database.php';
+// Load common bootstrap
+require_once __DIR__ . '/../_common.php';
 
 // Assume $job_id is set from parent page (view/edit)
 if (!isset($job_id)) {

@@ -1,5 +1,6 @@
 <?php
-if (!Auth::check()) throw new Exception('Unauthorized');
+// Load common bootstrap
+require_once __DIR__ . '/../_common.php';
 
 $db = Database::getInstance();
 $conn = $db->getConnection();

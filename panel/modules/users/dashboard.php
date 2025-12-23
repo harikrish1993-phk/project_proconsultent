@@ -1,4 +1,6 @@
 <?php
+// Load common bootstrap
+require_once __DIR__ . '/../_common.php';
 try {
     $stmt = $conn->query("SELECT COUNT(*) as total FROM user WHERE is_active = 1");
     $kpis['total'] = $stmt->fetch_assoc()['total'];

@@ -4,16 +4,10 @@
  * Handles routing for various reports.
  */
 
-require_once __DIR__ . '/../../../includes/config/config.php';
-require_once __DIR__ . '/../../../includes/core/Auth.php';
-require_once __DIR__ . '/../../../includes/core/Database.php';
+// Load common bootstrap
+require_once __DIR__ . '/../_common.php';
 require_once __DIR__ . '/../../../includes/core/Settings.php';
 
-// Check authentication
-if (!Auth::check()) {
-    header('Location: ../../../login.php');
-    exit();
-}
 
 $user = Auth::user();
 $report_type = $_GET['type'] ?? 'daily';

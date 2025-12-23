@@ -5,7 +5,7 @@ $current_page = basename($_SERVER['REQUEST_URI'], '?' . $_SERVER['QUERY_STRING']
 
 <aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
     <div class="app-brand demo">
-        <a href="dashboard?ss_id=<?php echo $token;?>" class="app-brand-link">
+        <a href="dashboard" class="app-brand-link">
             <span class="demo">
                 <img src="<?php echo LOGO_PATH; ?>" style="width: 100%;" />
             </span>
@@ -20,7 +20,7 @@ $current_page = basename($_SERVER['REQUEST_URI'], '?' . $_SERVER['QUERY_STRING']
     <ul class="menu-inner py-1" style="padding-top:4rem !important;">
         <!-- Dashboard -->
         <li class="menu-item <?php echo ($current_page == 'dashboard') ? 'active' : ''; ?>">
-            <a href="dashboard?ss_id=<?php echo $token;?>" class="menu-link">
+            <a href="dashboard" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-home-circle"></i>
                 <div data-i18n="Analytics">Dashboard</div>
             </a>
@@ -34,7 +34,7 @@ $current_page = basename($_SERVER['REQUEST_URI'], '?' . $_SERVER['QUERY_STRING']
             </a>
             <ul class="menu-sub">                
                 <li class="menu-item <?php echo ($current_page == 'assign_user') ? 'active' : ''; ?>">
-                    <a href="assign_user?ss_id=<?php echo $token;?>" class="menu-link">
+                    <a href="assign_user" class="menu-link">
                         <div data-i18n="Notifications">Assigned Role</div>
                     </a>
                 </li>
@@ -47,32 +47,32 @@ $current_page = basename($_SERVER['REQUEST_URI'], '?' . $_SERVER['QUERY_STRING']
             </a>
             <ul class="menu-sub">
                 <li class="menu-item <?php echo ($current_page == 'can_add' || $current_page == 'can_edit') ? 'active' : ''; ?>">
-                    <a href="can_add?ss_id=<?php echo $token;?>" class="menu-link">
+                    <a href="can_add" class="menu-link">
                         <div data-i18n="Basic">Add Candidate</div>
                     </a>
                 </li>
                 <li class="menu-item <?php echo ($current_page == 'can_assigned') ? 'active' : ''; ?>">
-                    <a href="can_assigned?ss_id=<?php echo $token;?>" class="menu-link">
+                    <a href="can_assigned" class="menu-link">
                         <div data-i18n="Basic">Assigned Candidate</div>
                     </a>
                 </li>
                 <li class="menu-item <?php echo ($current_page == 'can_list') ? 'active' : ''; ?>">
-                    <a href="can_list?ss_id=<?php echo $token;?>" class="menu-link">
+                    <a href="can_list" class="menu-link">
                         <div data-i18n="Basic">List Candidate</div>
                     </a>
                 </li>
                 <li class="menu-item <?php echo ($current_page == 'can_full_view') ? 'active' : ''; ?>">
-                    <a href="can_full_view?ss_id=<?php echo $token;?>" class="menu-link">
+                    <a href="can_full_view" class="menu-link">
                         <div data-i18n="Basic">Full view</div>
                     </a>
                 </li>
                 <li class="menu-item <?php echo ($current_page == 'can_hr_comment') ? 'active' : ''; ?>">
-                    <a href="can_hr_comment?ss_id=<?php echo $token;?>" class="menu-link">
+                    <a href="can_hr_comment" class="menu-link">
                         <div data-i18n="Basic">Payroll Comment</div>
                     </a>
                 </li>
                 <li class="menu-item <?php echo ($current_page == 'can_daily_rep') ? 'active' : ''; ?>">
-                    <a href="can_daily_rep?ss_id=<?php echo $token;?>" class="menu-link">
+                    <a href="can_daily_rep" class="menu-link">
                         <div data-i18n="Basic">Daily Report</div>
                     </a>
                 </li>
@@ -85,12 +85,12 @@ $current_page = basename($_SERVER['REQUEST_URI'], '?' . $_SERVER['QUERY_STRING']
             </a>
             <ul class="menu-sub">
                 <li class="menu-item <?php echo ($current_page == 'call_candidate') ? 'active' : ''; ?>">
-                    <a href="call_candidate?ss_id=<?php echo $token;?>" class="menu-link">
+                    <a href="call_candidate" class="menu-link">
                         <div data-i18n="Basic">Contact Candidates</div>
                     </a>
                 </li>
                 <li class="menu-item <?php echo ($current_page == 'manage_number') ? 'active' : ''; ?>">
-                    <a href="manage_number?ss_id=<?php echo $token;?>" class="menu-link">
+                    <a href="manage_number" class="menu-link">
                         <div data-i18n="Basic">Fix number</div>
                     </a>
                 </li>
@@ -104,17 +104,17 @@ $current_page = basename($_SERVER['REQUEST_URI'], '?' . $_SERVER['QUERY_STRING']
             </a>
             <ul class="menu-sub">
                 <li class="menu-item <?php echo ($current_page == 'add_job') ? 'active' : ''; ?>">
-                    <a href="add_job?ss_id=<?php echo $token;?>" class="menu-link">
+                    <a href="add_job" class="menu-link">
                         <div data-i18n="Basic">Add Job</div>
                     </a>
                 </li>
                 <li class="menu-item <?php echo ($current_page == 'job_status' || $current_page == 'approve_jobs') ? 'active' : ''; ?>">
-                    <a href="job_status?ss_id=<?php echo $token;?>" class="menu-link">
+                    <a href="job_status" class="menu-link">
                         <div data-i18n="Basic">Waiting Posts</div>
                     </a>
                 </li>
                 <li class="menu-item <?php echo ($current_page == 'list_jobs' || $current_page == 'view_jobs') ? 'active' : ''; ?>">
-                    <a href="list_jobs?ss_id=<?php echo $token;?>" class="menu-link">
+                    <a href="list_jobs" class="menu-link">
                         <div data-i18n="Basic">List Jobs</div>
                     </a>
                 </li>
@@ -128,7 +128,7 @@ $current_page = basename($_SERVER['REQUEST_URI'], '?' . $_SERVER['QUERY_STRING']
             </a>
             <ul class="menu-sub">
                 <li class="menu-item <?php echo ($current_page == 'user_login') ? 'active' : ''; ?>">
-                    <a href="user_login?ss_id=<?php echo $token;?>" class="menu-link">
+                    <a href="user_login" class="menu-link">
                         <div data-i18n="Basic">List User</div>
                     </a>
                 </li>
@@ -142,12 +142,12 @@ $current_page = basename($_SERVER['REQUEST_URI'], '?' . $_SERVER['QUERY_STRING']
             </a>
             <ul class="menu-sub">
                 <li class="menu-item <?php echo ($current_page == 'collection') ? 'active' : ''; ?>">
-                    <a href="collection?ss_id=<?php echo $token;?>" class="menu-link">
+                    <a href="collection" class="menu-link">
                         <div data-i18n="Basic">submitted CV</div>
                     </a>
                 </li>
                 <li class="menu-item <?php echo ($current_page == 'contact') ? 'active' : ''; ?>">
-                    <a href="contact?ss_id=<?php echo $token;?>" class="menu-link">
+                    <a href="contact" class="menu-link">
                         <div data-i18n="Basic">Queries</div>
                     </a>
                 </li>

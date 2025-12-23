@@ -45,7 +45,7 @@ $system_name = Core\Settings::getInstance()->get('system_name', 'Recruitment Sys
             <p>Dear Manager,</p>
             <p>Here is the automated daily summary of recruitment activity for <strong><?php echo $system_name; ?></strong>.</p>
 
-            <h2>Key Performance Indicators (KPIs)</h2>
+            <h2>Key Performance Indicators</h2>
             <?php foreach ($kpis as $label => $value): ?>
                 <div class="kpi-card">
                     <strong><?php echo htmlspecialchars($label); ?>:</strong> <?php echo htmlspecialchars($value); ?>

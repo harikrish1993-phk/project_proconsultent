@@ -1,6 +1,7 @@
 <?php
 // Assigned Candidates Management
-
+// Load common bootstrap
+require_once __DIR__ . '/../_common.php';
 $db = Database::getInstance();
 $conn = $db->getConnection();
 

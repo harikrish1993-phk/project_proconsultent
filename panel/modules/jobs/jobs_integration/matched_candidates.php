@@ -1,4 +1,6 @@
 <?php
+// Load common bootstrap
+require_once __DIR__ . '/../_common.php';
 $id = intval($_GET['id'] ?? 0); // Job ID
 if (!$id) {
     echo '<div class="alert alert-danger">Invalid job ID.</div>';

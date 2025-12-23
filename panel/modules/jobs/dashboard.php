@@ -1,9 +1,7 @@
 <?php
-// modules/jobs/dashboard.php - Updated with Quick Actions
-require_once __DIR__ . '/../../../includes/config/config.php';
-require_once __DIR__ . '/../../../includes/core/Auth.php';
-require_once __DIR__ . '/../../../includes/core/Database.php';
-require_once __DIR__ . '/../../../includes/header.php';
+// modules/jobs/dashboard.php 
+// Load common bootstrap
+require_once __DIR__ . '/../_common.php';
 
 if (!Auth::check()) {
     header('Location: ../../../login.php');

@@ -110,17 +110,17 @@ ini_set('session.cookie_httponly', 1);
 ini_set('session.cookie_secure', ENVIRONMENT === 'production' ? 1 : 0);
 
 // Helper Functions
-function sanitize($input) {
-    if (is_array($input)) {
-        return array_map('sanitize', $input);
-    }
-    return htmlspecialchars(trim($input), ENT_QUOTES, 'UTF-8');
-}
+// function sanitize($input) {
+//     if (is_array($input)) {
+//         return array_map('sanitize', $input);
+//     }
+//     return htmlspecialchars(trim($input), ENT_QUOTES, 'UTF-8');
+// }
 
-function redirect($url, $statusCode = 302) {
-    header("Location: $url", true, $statusCode);
-    exit();
-}
+// function redirect($url, $statusCode = 302) {
+//     header("Location: $url", true, $statusCode);
+//     exit();
+// }
 
 function dbConnect() {
     static $conn = null;

@@ -1,6 +1,6 @@
 <?php
 /**
- * RECRUITER DASHBOARD - FINAL PRODUCTION VERSION
+ * RECRUITER DASHBOARD
  * Location: panel/recruiter.php
  */
 

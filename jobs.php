@@ -227,7 +227,7 @@
                 <div class="row gx-5">
                     <div class="col-lg-6 col-md-12 pt-5 mb-5">
                         <div class="section-title section-title-sm position-relative pb-3 mb-4">
-                            <h3 class="text-light mb-0">Europe Office</h3>
+                            <h3 class="text-light mb-0"></h3>
                         </div>
                         <div class="d-flex mb-2">
                             <i class="bi bi-geo-alt text-primary me-2"></i>
@@ -235,11 +235,11 @@
                         </div>
                         <div class="d-flex mb-2">
                             <i class="bi bi-envelope-open text-primary me-2"></i>
-                            <p class="mb-0">admin@proconsultancy.be</p>
+                            <p class="mb-0"></p>
                         </div>
                         <div class="d-flex mb-2">
                             <i class="bi bi-telephone text-primary me-2"></i>
-                            <p class="mb-0">+32-472849033</p>
+                            <p class="mb-0"></p>
                         </div>
                         
                     </div>

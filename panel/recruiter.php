@@ -366,25 +366,6 @@ $conn->close();
             </div>
             <?php endif; ?>
             
-            <!-- Quick Actions -->
-            <div class="quick-actions">
-                <a href="can_add.php" class="quick-action-btn">
-                    <div class="icon">➕</div>
-                    <div class="label">Add Candidate</div>
-                </a>
-                <a href="add_job.php" class="quick-action-btn">
-                    <div class="icon">💼</div>
-                    <div class="label">Post Position</div>
-                </a>
-                <a href="can_list.php" class="quick-action-btn">
-                    <div class="icon">📋</div>
-                    <div class="label">View My Talent</div>
-                </a>
-                <a href="list_jobs.php" class="quick-action-btn">
-                    <div class="icon">🔍</div>
-                    <div class="label">My Openings</div>
-                </a>
-            </div>
             
             <!-- Statistics Cards -->
             <div class="stats-grid">

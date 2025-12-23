@@ -5,9 +5,8 @@
  */
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
-
 // Load config
-require_once __DIR__ . '/includes/config/config.php';
+require_once __DIR__ . '/../includes/config/config.php';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -112,13 +111,7 @@ require_once __DIR__ . '/includes/config/config.php';
         .user-card.admin {
             border-left: 5px solid #dc3545;
         }
-        .user-card.recruiter {
-            border-left: 5px solid #28a745;
-        }
-        .user-card.manager {
-            border-left: 5px solid #ffc107;
-        }
-        .user-card.employee {
+        .user-card.user {
             border-left: 5px solid #17a2b8;
         }
         .role-badge {
@@ -133,9 +126,7 @@ require_once __DIR__ . '/includes/config/config.php';
             letter-spacing: 1px;
         }
         .role-badge.admin { background: #dc3545; color: white; }
-        .role-badge.recruiter { background: #28a745; color: white; }
-        .role-badge.manager { background: #ffc107; color: #333; }
-        .role-badge.employee { background: #17a2b8; color: white; }
+        .role-badge.user { background: #17a2b8; color: white; }
         .user-header {
             display: flex;
             align-items: center;
@@ -210,22 +201,6 @@ require_once __DIR__ . '/includes/config/config.php';
         }
         .copy-btn:active {
             transform: scale(0.95);
-        }
-        .status-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 600;
-            margin-left: 10px;
-        }
-        .status-active {
-            background: #d4edda;
-            color: #155724;
-        }
-        .status-inactive {
-            background: #f8d7da;
-            color: #721c24;
         }
         .quick-login {
             margin-top: 15px;
@@ -350,11 +325,11 @@ require_once __DIR__ . '/includes/config/config.php';
     <div class="container">
         <h1>👥 User Credentials Viewer</h1>
         <p class="subtitle">All available users with their login credentials (User Code + Password)</p>
-        
+       
         <?php
         // Connect to database
         $conn = @mysqli_connect(DB_HOST, DB_USER, DB_PASS, DB_NAME);
-        
+       
         if (!$conn) {
             echo '<div class="alert alert-danger">';
             echo '<strong>❌ Database Connection Failed!</strong><br>';
@@ -362,18 +337,17 @@ require_once __DIR__ . '/includes/config/config.php';
             echo '</div>';
             exit;
         }
-        
+       
         // Get all users
-        $query = "SELECT * FROM users ORDER BY 
-                  CASE 
-                      WHEN role = 'admin' THEN 1
-                      WHEN role = 'manager' THEN 2
-                      WHEN role = 'recruiter' THEN 3
-                      ELSE 4
+        $query = "SELECT * FROM user ORDER BY
+                  CASE
+                      WHEN level = 'admin' THEN 1
+                      WHEN level = 'user' THEN 2
+                      ELSE 3
                   END, created_at DESC";
-        
+       
         $result = mysqli_query($conn, $query);
-        
+       
         if (!$result) {
             echo '<div class="alert alert-danger">';
             echo '<strong>❌ Query Failed!</strong><br>';
@@ -381,14 +355,14 @@ require_once __DIR__ . '/includes/config/config.php';
             echo '</div>';
             exit;
         }
-        
+       
         $users = [];
         while ($row = mysqli_fetch_assoc($result)) {
             $users[] = $row;
         }
-        
+       
         mysqli_close($conn);
-        
+       
         if (empty($users)) {
             echo '<div class="alert alert-warning">';
             echo '<strong>⚠️ No Users Found!</strong><br>';
@@ -396,19 +370,18 @@ require_once __DIR__ . '/includes/config/config.php';
             echo '</div>';
             exit;
         }
-        
+       
         // Calculate stats
         $totalUsers = count($users);
-        $activeUsers = count(array_filter($users, fn($u) => $u['status'] === 'active'));
-        $adminCount = count(array_filter($users, fn($u) => $u['role'] === 'admin'));
-        $recruiterCount = count(array_filter($users, fn($u) => $u['role'] === 'recruiter'));
+        $adminCount = count(array_filter($users, fn($u) => $u['level'] === 'admin'));
+        $userCount = count(array_filter($users, fn($u) => $u['level'] === 'user'));
         ?>
-        
+       
         <div class="alert alert-success">
             <strong>✅ Found <?php echo $totalUsers; ?> user(s) in database</strong><br>
             You can login with any of these using their <strong>User Code</strong> (not email) and password.
         </div>
-        
+       
         <!-- Stats -->
         <div class="stats">
             <div class="stat-card">
@@ -416,66 +389,63 @@ require_once __DIR__ . '/includes/config/config.php';
                 <div class="stat-label">Total Users</div>
             </div>
             <div class="stat-card">
-                <div class="stat-number"><?php echo $activeUsers; ?></div>
-                <div class="stat-label">Active Users</div>
-            </div>
-            <div class="stat-card">
                 <div class="stat-number"><?php echo $adminCount; ?></div>
                 <div class="stat-label">Administrators</div>
             </div>
             <div class="stat-card">
-                <div class="stat-number"><?php echo $recruiterCount; ?></div>
-                <div class="stat-label">Recruiters</div>
+                <div class="stat-number"><?php echo $userCount; ?></div>
+                <div class="stat-label">Users</div>
             </div>
         </div>
-        
+       
         <!-- Search -->
         <div class="search-box">
             <input type="text" id="searchInput" placeholder="🔍 Search by name, email, or user code..." onkeyup="filterUsers()">
         </div>
-        
+       
         <!-- View Toggle -->
         <div class="view-toggle">
             <button class="toggle-btn active" onclick="toggleView('cards')">📱 Card View</button>
             <button class="toggle-btn" onclick="toggleView('table')">📊 Table View</button>
         </div>
-        
+       
         <!-- Filters -->
         <div class="filters">
             <button class="filter-btn active" data-filter="all" onclick="filterByRole('all')">All Users</button>
             <button class="filter-btn" data-filter="admin" onclick="filterByRole('admin')">🔴 Admins</button>
-            <button class="filter-btn" data-filter="recruiter" onclick="filterByRole('recruiter')">🟢 Recruiters</button>
-            <button class="filter-btn" data-filter="manager" onclick="filterByRole('manager')">🟡 Managers</button>
-            <button class="filter-btn" data-filter="active" onclick="filterByStatus('active')">✅ Active Only</button>
+            <button class="filter-btn" data-filter="user" onclick="filterByRole('user')">🔵 Users</button>
         </div>
-        
+       
         <!-- Card View -->
         <div class="user-grid" id="cardView">
             <?php foreach ($users as $user): ?>
-                <div class="user-card <?php echo htmlspecialchars($user['role']); ?>" 
-                     data-role="<?php echo htmlspecialchars($user['role']); ?>"
-                     data-status="<?php echo htmlspecialchars($user['status']); ?>"
-                     data-search="<?php echo htmlspecialchars(strtolower($user['first_name'] . ' ' . $user['last_name'] . ' ' . $user['email'] . ' ' . $user['user_code'])); ?>">
-                    
-                    <span class="role-badge <?php echo htmlspecialchars($user['role']); ?>">
-                        <?php echo htmlspecialchars(strtoupper($user['role'])); ?>
+                <div class="user-card <?php echo htmlspecialchars($user['level']); ?>"
+                     data-role="<?php echo htmlspecialchars($user['level']); ?>"
+                     data-search="<?php echo htmlspecialchars(strtolower($user['name'] . ' ' . $user['email'] . ' ' . $user['user_code'])); ?>">
+                   
+                    <span class="role-badge <?php echo htmlspecialchars($user['level']); ?>">
+                        <?php echo htmlspecialchars(strtoupper($user['level'])); ?>
                     </span>
-                    
+                   
                     <div class="user-header">
                         <div class="user-avatar">
-                            <?php echo strtoupper(substr($user['first_name'], 0, 1) . substr($user['last_name'], 0, 1)); ?>
+                            <?php 
+                            $names = explode(' ', $user['name']);
+                            $initials = strtoupper(substr($names[0], 0, 1));
+                            if (count($names) > 1) {
+                                $initials .= strtoupper(substr(end($names), 0, 1));
+                            }
+                            echo $initials;
+                            ?>
                         </div>
                         <div class="user-info">
                             <h3>
-                                <?php echo htmlspecialchars($user['first_name'] . ' ' . $user['last_name']); ?>
-                                <span class="status-badge status-<?php echo htmlspecialchars($user['status']); ?>">
-                                    <?php echo htmlspecialchars(ucfirst($user['status'])); ?>
-                                </span>
+                                <?php echo htmlspecialchars($user['name']); ?>
                             </h3>
                             <div class="email"><?php echo htmlspecialchars($user['email']); ?></div>
                         </div>
                     </div>
-                    
+                   
                     <div class="credentials">
                         <div class="credential-item">
                             <div class="credential-label">User Code (Login)</div>
@@ -486,36 +456,17 @@ require_once __DIR__ . '/includes/config/config.php';
                                 </button>
                             </div>
                         </div>
-                        
+                       
                         <div class="credential-item">
-                            <div class="credential-label">Default Password</div>
+                            <div class="credential-label">Password</div>
                             <div class="credential-value">
-                                <code>
-                                    <?php 
-                                    // Show default passwords based on role
-                                    if ($user['role'] === 'admin') {
-                                        echo 'Admin@123';
-                                    } elseif ($user['role'] === 'recruiter') {
-                                        echo 'Recruiter@123';
-                                    } else {
-                                        echo 'Password@123';
-                                    }
-                                    ?>
-                                </code>
-                                <button class="copy-btn" onclick="copyToClipboard('<?php 
-                                    if ($user['role'] === 'admin') {
-                                        echo 'Admin@123';
-                                    } elseif ($user['role'] === 'recruiter') {
-                                        echo 'Recruiter@123';
-                                    } else {
-                                        echo 'Password@123';
-                                    }
-                                ?>', this)">
+                                <code><?php echo htmlspecialchars($user['password']); ?></code>
+                                <button class="copy-btn" onclick="copyToClipboard('<?php echo htmlspecialchars($user['password']); ?>', this)">
                                     📋 Copy
                                 </button>
                             </div>
                         </div>
-                        
+                       
                         <div class="credential-item">
                             <div class="credential-label">Email (Alternative)</div>
                             <div class="credential-value">
@@ -525,7 +476,7 @@ require_once __DIR__ . '/includes/config/config.php';
                                 </button>
                             </div>
                         </div>
-                        
+                       
                         <div class="credential-item">
                             <div class="credential-label">User ID</div>
                             <div class="credential-value">
@@ -533,36 +484,20 @@ require_once __DIR__ . '/includes/config/config.php';
                             </div>
                         </div>
                     </div>
-                    
-                    <?php if ($user['status'] === 'active'): ?>
+                   
                     <div class="quick-login">
                         <form method="POST" action="login.php" style="margin: 0;">
                             <input type="hidden" name="user_code" value="<?php echo htmlspecialchars($user['user_code']); ?>">
-                            <input type="hidden" name="password" value="<?php 
-                                if ($user['role'] === 'admin') {
-                                    echo 'Admin@123';
-                                } elseif ($user['role'] === 'recruiter') {
-                                    echo 'Recruiter@123';
-                                } else {
-                                    echo 'Password@123';
-                                }
-                            ?>">
+                            <input type="hidden" name="password" value="<?php echo htmlspecialchars($user['password']); ?>">
                             <button type="submit" class="login-btn">
-                                🔐 Quick Login as <?php echo htmlspecialchars($user['first_name']); ?>
+                                🔐 Quick Login as <?php echo htmlspecialchars(explode(' ', $user['name'])[0]); ?>
                             </button>
                         </form>
                     </div>
-                    <?php else: ?>
-                    <div class="quick-login">
-                        <button class="login-btn" style="opacity: 0.5; cursor: not-allowed;" disabled>
-                            ⚠️ Account Inactive
-                        </button>
-                    </div>
-                    <?php endif; ?>
                 </div>
             <?php endforeach; ?>
         </div>
-        
+       
         <!-- Table View -->
         <table id="tableView">
             <thead>
@@ -571,62 +506,35 @@ require_once __DIR__ . '/includes/config/config.php';
                     <th>User Code</th>
                     <th>Name</th>
                     <th>Email</th>
-                    <th>Role</th>
+                    <th>Level</th>
                     <th>Password</th>
-                    <th>Status</th>
                     <th>Action</th>
                 </tr>
             </thead>
             <tbody>
                 <?php foreach ($users as $user): ?>
-                <tr data-role="<?php echo htmlspecialchars($user['role']); ?>"
-                    data-status="<?php echo htmlspecialchars($user['status']); ?>"
-                    data-search="<?php echo htmlspecialchars(strtolower($user['first_name'] . ' ' . $user['last_name'] . ' ' . $user['email'] . ' ' . $user['user_code'])); ?>">
+                <tr data-role="<?php echo htmlspecialchars($user['level']); ?>"
+                    data-search="<?php echo htmlspecialchars(strtolower($user['name'] . ' ' . $user['email'] . ' ' . $user['user_code'])); ?>">
                     <td><?php echo htmlspecialchars($user['id']); ?></td>
                     <td><code><?php echo htmlspecialchars($user['user_code']); ?></code></td>
-                    <td><?php echo htmlspecialchars($user['first_name'] . ' ' . $user['last_name']); ?></td>
+                    <td><?php echo htmlspecialchars($user['name']); ?></td>
                     <td><?php echo htmlspecialchars($user['email']); ?></td>
                     <td>
-                        <span class="role-badge <?php echo htmlspecialchars($user['role']); ?>">
-                            <?php echo htmlspecialchars(strtoupper($user['role'])); ?>
+                        <span class="role-badge <?php echo htmlspecialchars($user['level']); ?>">
+                            <?php echo htmlspecialchars(strtoupper($user['level'])); ?>
                         </span>
                     </td>
                     <td>
-                        <code>
-                            <?php 
-                            if ($user['role'] === 'admin') {
-                                echo 'Admin@123';
-                            } elseif ($user['role'] === 'recruiter') {
-                                echo 'Recruiter@123';
-                            } else {
-                                echo 'Password@123';
-                            }
-                            ?>
-                        </code>
+                        <code><?php echo htmlspecialchars($user['password']); ?></code>
                     </td>
                     <td>
-                        <span class="status-badge status-<?php echo htmlspecialchars($user['status']); ?>">
-                            <?php echo htmlspecialchars(ucfirst($user['status'])); ?>
-                        </span>
-                    </td>
-                    <td>
-                        <?php if ($user['status'] === 'active'): ?>
-                        <button class="copy-btn" onclick="copyCredentials('<?php echo htmlspecialchars($user['user_code']); ?>', '<?php 
-                            if ($user['role'] === 'admin') {
-                                echo 'Admin@123';
-                            } elseif ($user['role'] === 'recruiter') {
-                                echo 'Recruiter@123';
-                            } else {
-                                echo 'Password@123';
-                            }
-                        ?>')">Copy Both</button>
-                        <?php endif; ?>
+                        <button class="copy-btn" onclick="copyCredentials('<?php echo htmlspecialchars($user['user_code']); ?>', '<?php echo htmlspecialchars($user['password']); ?>')">Copy Both</button>
                     </td>
                 </tr>
                 <?php endforeach; ?>
             </tbody>
         </table>
-        
+       
         <div class="alert alert-info" style="margin-top: 30px;">
             <strong>💡 How to Login:</strong><br>
             1. Go to: <a href="login.php" target="_blank"><strong>login.php</strong></a><br>
@@ -635,7 +543,7 @@ require_once __DIR__ . '/includes/config/config.php';
             4. Click Login<br><br>
             <strong>Or use the "Quick Login" button on each card!</strong>
         </div>
-        
+       
         <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 2px solid #dee2e6;">
             <a href="test_connection.php" style="display: inline-block; padding: 12px 25px; background: #28a745; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; margin-right: 10px;">
                 🗄️ Database Test
@@ -648,20 +556,20 @@ require_once __DIR__ . '/includes/config/config.php';
             </a>
         </div>
     </div>
-    
+   
     <script>
         let currentView = 'cards';
         let currentFilter = 'all';
-        
+       
         function toggleView(view) {
             currentView = view;
             const cardView = document.getElementById('cardView');
             const tableView = document.getElementById('tableView');
             const toggleBtns = document.querySelectorAll('.toggle-btn');
-            
+           
             toggleBtns.forEach(btn => btn.classList.remove('active'));
             event.target.classList.add('active');
-            
+           
             if (view === 'cards') {
                 cardView.style.display = 'grid';
                 tableView.classList.remove('active');
@@ -670,7 +578,7 @@ require_once __DIR__ . '/includes/config/config.php';
                 tableView.classList.add('active');
             }
         }
-        
+       
         function filterByRole(role) {
             currentFilter = role;
             const filterBtns = document.querySelectorAll('.filter-btn');
@@ -680,10 +588,10 @@ require_once __DIR__ . '/includes/config/config.php';
                     btn.classList.add('active');
                 }
             });
-            
+           
             const cards = document.querySelectorAll('.user-card');
             const rows = document.querySelectorAll('#tableView tbody tr');
-            
+           
             cards.forEach(card => {
                 if (role === 'all' || card.dataset.role === role) {
                     card.style.display = 'block';
@@ -691,7 +599,7 @@ require_once __DIR__ . '/includes/config/config.php';
                     card.style.display = 'none';
                 }
             });
-            
+           
             rows.forEach(row => {
                 if (role === 'all' || row.dataset.role === role) {
                     row.style.display = 'table-row';
@@ -700,37 +608,12 @@ require_once __DIR__ . '/includes/config/config.php';
                 }
             });
         }
-        
-        function filterByStatus(status) {
-            const filterBtns = document.querySelectorAll('.filter-btn');
-            filterBtns.forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
-            
-            const cards = document.querySelectorAll('.user-card');
-            const rows = document.querySelectorAll('#tableView tbody tr');
-            
-            cards.forEach(card => {
-                if (card.dataset.status === status) {
-                    card.style.display = 'block';
-                } else {
-                    card.style.display = 'none';
-                }
-            });
-            
-            rows.forEach(row => {
-                if (row.dataset.status === status) {
-                    row.style.display = 'table-row';
-                } else {
-                    row.style.display = 'none';
-                }
-            });
-        }
-        
+       
         function filterUsers() {
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
             const cards = document.querySelectorAll('.user-card');
             const rows = document.querySelectorAll('#tableView tbody tr');
-            
+           
             cards.forEach(card => {
                 const searchData = card.dataset.search;
                 if (searchData.includes(searchTerm)) {
@@ -739,7 +622,7 @@ require_once __DIR__ . '/includes/config/config.php';
                     card.style.display = 'none';
                 }
             });
-            
+           
             rows.forEach(row => {
                 const searchData = row.dataset.search;
                 if (searchData.includes(searchTerm)) {
@@ -749,20 +632,20 @@ require_once __DIR__ . '/includes/config/config.php';
                 }
             });
         }
-        
+       
         function copyToClipboard(text, button) {
             navigator.clipboard.writeText(text).then(() => {
                 const originalText = button.textContent;
                 button.textContent = '✅ Copied!';
                 button.style.background = '#28a745';
-                
+               
                 setTimeout(() => {
                     button.textContent = originalText;
                     button.style.background = '#667eea';
                 }, 2000);
             });
         }
-        
+       
         function copyCredentials(userCode, password) {
             const text = `User Code: ${userCode}\nPassword: ${password}`;
             navigator.clipboard.writeText(text).then(() => {

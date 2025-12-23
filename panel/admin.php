@@ -1,6 +1,6 @@
 <?php
 /**
- * ADMIN DASHBOARD
+ * ADMIN DASHBOARD - FINAL PRODUCTION VERSION
  * Location: panel/admin.php
  */
 

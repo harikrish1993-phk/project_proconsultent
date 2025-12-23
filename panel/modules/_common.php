@@ -46,7 +46,16 @@ if (!defined('ROOT_PATH')) {
 require_once ROOT_PATH . '/includes/config/config.php';
 require_once ROOT_PATH . '/includes/core/Auth.php';
 require_once ROOT_PATH . '/includes/core/Database.php';
+// Load Logger
+if (file_exists(ROOT_PATH . '/includes/core/Logger.php')) {
+    require_once ROOT_PATH . '/includes/core/Logger.php';
+    Logger::init();
+}
 
+// Load debug configuration
+if (file_exists(ROOT_PATH . '/includes/config/debug.php')) {
+    require_once ROOT_PATH . '/includes/config/debug.php';
+}
 // Optional: Load additional components if they exist
 if (file_exists(ROOT_PATH . '/includes/core/ActivityLogger.php')) {
     require_once ROOT_PATH . '/includes/core/ActivityLogger.php';

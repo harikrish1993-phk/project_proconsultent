@@ -1,6 +1,6 @@
 <?php
 // Load common bootstrap
-require_once __DIR__ . '/../_common.php';
+require_once __DIR__ . '/../../_common.php';
 // Page configuration
 $pageTitle = 'Jobs Dashboard';
 $breadcrumbs = [

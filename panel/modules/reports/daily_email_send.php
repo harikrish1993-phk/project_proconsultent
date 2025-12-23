@@ -12,6 +12,16 @@ if (php_sapi_name() !== 'cli') {
 
 // Load common bootstrap
 require_once __DIR__ . '/../_common.php';
+$pageTitle = 'Reports';
+$breadcrumbs = [
+    'Reports' => '#'
+];
+// Include header
+require_once ROOT_PATH . '/panel/includes/header.php';
+require_once ROOT_PATH . '/panel/components/ui_components.php';
+
+// Display breadcrumb
+echo renderBreadcrumb($breadcrumbs);
 require_once __DIR__ . '/../../../includes/core/Settings.php';
 require_once __DIR__ . '/../../../includes/core/Mailer.php';
 

@@ -10,7 +10,7 @@
  */
 
 // Load common bootstrap
-require_once __DIR__ . '/../_common.php';
+require_once __DIR__ . '/../../_common.php';
 
 header('Content-Type: application/json');
 

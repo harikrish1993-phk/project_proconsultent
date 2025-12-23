@@ -14,6 +14,8 @@ require_once __DIR__ . '/../includes/config/config.php';
 require_once __DIR__ . '/../includes/core/Auth.php';
 require_once __DIR__ . '/../includes/core/Database.php';
 
+
+
 // Check authentication
 if (!Auth::check()) {
     header('Location: ../login.php');

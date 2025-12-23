@@ -7,6 +7,16 @@
 // Placeholder for fetching filter options (e.g., all recruiters, job titles)
 // Load common bootstrap
 require_once __DIR__ . '/../_common.php';
+$pageTitle = 'Daily Reports';
+$breadcrumbs = [
+    'Reports' => '#'
+];
+// Include header
+require_once ROOT_PATH . '/panel/includes/header.php';
+require_once ROOT_PATH . '/panel/components/ui_components.php';
+
+// Display breadcrumb
+echo renderBreadcrumb($breadcrumbs);
 
 $db = Core\Database::getInstance();
 $conn = $db->getConnection();

@@ -5,7 +5,7 @@
  */
 
 // Load common bootstrap
-require_once __DIR__ . '/../_common.php';
+require_once __DIR__ . '/modules/_common.php';
 
 // Perform logout
 Auth::logout();

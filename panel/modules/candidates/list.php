@@ -1,7 +1,7 @@
 <?php
 /**
- * Candidates List - RECRUITER-FIRST DESIGN (FIXED)
- * Fixes: CSS loading, AJAX errors, proper layout
+ * Candidates List - COMPLETE VERSION
+ * Based on ACTUAL schema with all proper fields and filters
  */
 
 // ============================================================================
@@ -10,32 +10,44 @@
 require_once __DIR__ . '/../_common.php';
 
 $pageTitle = 'Candidates Database';
-$pageDescription = 'Find the right talent quickly';
+$pageDescription = 'Comprehensive talent pool management';
 
 // ============================================================================
-// FETCH FILTER OPTIONS
+// FETCH FILTER OPTIONS FROM DATABASE
 // ============================================================================
 $skillsList = [];
-$statusList = ['New', 'Screening', 'Interview', 'Offered', 'Hired', 'Rejected', 'On Hold'];
+$leadTypes = ['Cold', 'Warm', 'Hot', 'Blacklist'];
+$leadTypeRoles = ['Payroll', 'Recruitment', 'Mixed'];
+$workingStatuses = ['Freelance(Self)', 'Freelance(Company)', 'Employee'];
 $experienceRanges = [
     '0-2' => '0-2 years',
     '2-5' => '2-5 years',
     '5-8' => '5-8 years',
-    '8+' => '8+ years'
+    '8-15' => '8-15 years',
+    '15+' => '15+ years'
 ];
-$noticePeriods = ['Immediate', '15 days', '30 days', '60 days', '90 days'];
-$locations = [];
-$stats = ['total' => 0, 'active' => 0, 'screening' => 0, 'interview' => 0];
+$noticePeriods = [
+    'immediate' => 'Immediate',
+    '15' => 'Up to 15 days',
+    '30' => 'Up to 30 days',
+    '60' => 'Up to 60 days',
+    '90' => 'Up to 90 days',
+    '90+' => 'More than 90 days'
+];
+$currentLocations = [];
+$preferredLocations = [];
+$workAuthStatuses = [];
+$stats = ['total' => 0, 'cold' => 0, 'warm' => 0, 'hot' => 0];
 
 try {
     $conn = getDB();
     
-    // Get unique skills
-    $skillsQuery = "SELECT DISTINCT skills FROM candidates WHERE skills IS NOT NULL AND skills != '' AND is_archived = 0";
+    // Get unique skills from skill_set field
+    $skillsQuery = "SELECT DISTINCT skill_set FROM candidates WHERE skill_set IS NOT NULL AND skill_set != ''";
     $result = $conn->query($skillsQuery);
     if ($result) {
         while ($row = $result->fetch_assoc()) {
-            $skills = explode(',', $row['skills']);
+            $skills = explode(',', $row['skill_set']);
             foreach ($skills as $skill) {
                 $skill = trim($skill);
                 if (!empty($skill) && !in_array($skill, $skillsList)) {
@@ -46,15 +58,34 @@ try {
     }
     sort($skillsList);
     
-    // Get unique locations
-    $locQuery = "SELECT DISTINCT current_location FROM candidates WHERE current_location IS NOT NULL AND current_location != '' AND is_archived = 0";
+    // Get unique current locations
+    $locQuery = "SELECT DISTINCT current_location FROM candidates WHERE current_location IS NOT NULL AND current_location != ''";
     $result = $conn->query($locQuery);
     if ($result) {
         while ($row = $result->fetch_assoc()) {
-            $locations[] = $row['current_location'];
+            $currentLocations[] = $row['current_location'];
         }
     }
-    sort($locations);
+    sort($currentLocations);
+    
+    // Get unique preferred locations
+    $prefLocQuery = "SELECT DISTINCT preferred_location FROM candidates WHERE preferred_location IS NOT NULL AND preferred_location != ''";
+    $result = $conn->query($prefLocQuery);
+    if ($result) {
+        while ($row = $result->fetch_assoc()) {
+            $preferredLocations[] = $row['preferred_location'];
+        }
+    }
+    sort($preferredLocations);
+    
+    // Get work authorization statuses
+    $waQuery = "SELECT id, status FROM work_authorization ORDER BY status";
+    $result = $conn->query($waQuery);
+    if ($result) {
+        while ($row = $result->fetch_assoc()) {
+            $workAuthStatuses[] = $row;
+        }
+    }
     
     // Get assigned users for admin
     $assignedUsers = [];
@@ -65,23 +96,23 @@ try {
         }
     }
     
-    // Get quick stats
-    $baseQuery = "SELECT COUNT(*) as count, status FROM candidates WHERE is_archived = 0";
+    // Get quick stats by lead_type
+    $baseQuery = "SELECT COUNT(*) as count, lead_type FROM candidates WHERE 1=1";
     if ($current_user_level === 'recruiter') {
         $baseQuery .= " AND assigned_to = '$current_user_code'";
     }
-    $baseQuery .= " GROUP BY status";
+    $baseQuery .= " GROUP BY lead_type";
     
     $result = $conn->query($baseQuery);
     if ($result) {
         while ($row = $result->fetch_assoc()) {
-            $status = strtolower($row['status'] ?? '');
-            if (in_array($status, ['active', 'new'])) {
-                $stats['active'] += $row['count'];
-            } elseif ($status === 'screening') {
-                $stats['screening'] = $row['count'];
-            } elseif (in_array($status, ['interview', 'interviewing'])) {
-                $stats['interview'] += $row['count'];
+            $lead_type = strtolower($row['lead_type'] ?? '');
+            if ($lead_type === 'cold') {
+                $stats['cold'] = $row['count'];
+            } elseif ($lead_type === 'warm') {
+                $stats['warm'] = $row['count'];
+            } elseif ($lead_type === 'hot') {
+                $stats['hot'] = $row['count'];
             }
             $stats['total'] += $row['count'];
         }
@@ -97,10 +128,6 @@ try {
 ob_start();
 ?>
 
-<!-- ======================================================================= -->
-<!-- PAGE CONTENT -->
-<!-- ======================================================================= -->
-
 <div class="container-xxl flex-grow-1 container-p-y">
     
     <!-- Page Header with Stats -->
@@ -111,7 +138,7 @@ ob_start();
                     <h2 class="mb-1">
                         <i class="bx bx-user-circle"></i> Candidates Database
                     </h2>
-                    <p class="text-muted mb-0">Find and manage your talent pool</p>
+                    <p class="text-muted mb-0">Comprehensive talent pool management</p>
                 </div>
                 <div>
                     <a href="create.php" class="btn btn-primary btn-lg">
@@ -121,13 +148,13 @@ ob_start();
             </div>
         </div>
         
-        <!-- Stats Cards -->
+        <!-- Stats Cards - Lead Type Distribution -->
         <div class="col-md-3 col-sm-6 mb-3">
             <div class="card">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <p class="mb-1 fw-semibold text-muted">Total</p>
+                            <p class="mb-1 fw-semibold text-muted">Total Candidates</p>
                             <h3 class="mb-0"><?php echo number_format($stats['total']); ?></h3>
                         </div>
                         <div class="avatar">
@@ -145,12 +172,12 @@ ob_start();
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <p class="mb-1 fw-semibold text-muted">Active</p>
-                            <h3 class="mb-0"><?php echo number_format($stats['active']); ?></h3>
+                            <p class="mb-1 fw-semibold text-muted">Hot Leads</p>
+                            <h3 class="mb-0 text-danger"><?php echo number_format($stats['hot']); ?></h3>
                         </div>
                         <div class="avatar">
-                            <span class="avatar-initial rounded bg-label-success">
-                                <i class="bx bx-check-circle bx-md"></i>
+                            <span class="avatar-initial rounded bg-label-danger">
+                                <i class="bx bx-trending-up bx-md"></i>
                             </span>
                         </div>
                     </div>
@@ -163,30 +190,30 @@ ob_start();
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <p class="mb-1 fw-semibold text-muted">Screening</p>
-                            <h3 class="mb-0"><?php echo number_format($stats['screening']); ?></h3>
-                        </div>
-                        <div class="avatar">
-                            <span class="avatar-initial rounded bg-label-info">
-                                <i class="bx bx-search bx-md"></i>
-                            </span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-3 col-sm-6 mb-3">
-            <div class="card">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <p class="mb-1 fw-semibold text-muted">Interview</p>
-                            <h3 class="mb-0"><?php echo number_format($stats['interview']); ?></h3>
+                            <p class="mb-1 fw-semibold text-muted">Warm Leads</p>
+                            <h3 class="mb-0 text-warning"><?php echo number_format($stats['warm']); ?></h3>
                         </div>
                         <div class="avatar">
                             <span class="avatar-initial rounded bg-label-warning">
-                                <i class="bx bx-user-voice bx-md"></i>
+                                <i class="bx bx-line-chart bx-md"></i>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="mb-1 fw-semibold text-muted">Cold Leads</p>
+                            <h3 class="mb-0 text-info"><?php echo number_format($stats['cold']); ?></h3>
+                        </div>
+                        <div class="avatar">
+                            <span class="avatar-initial rounded bg-label-info">
+                                <i class="bx bx-chart bx-md"></i>
                             </span>
                         </div>
                     </div>
@@ -200,7 +227,7 @@ ob_start();
         <div class="card-header bg-white">
             <h5 class="mb-0">
                 <i class="bx bx-filter-alt text-primary"></i> 
-                <strong>Search Candidates</strong>
+                <strong>Search & Filter Candidates</strong>
             </h5>
         </div>
         <div class="card-body">
@@ -216,30 +243,45 @@ ob_start();
                                id="quick_search" 
                                name="quick_search"
                                class="form-control form-control-lg"
-                               placeholder="Search by name, email, or keyword..."
+                               placeholder="Search by name, email, skills, role, position..."
                                style="border: 2px solid #dee2e6; font-size: 1.1rem;">
                         <small class="text-muted">
                             <i class="bx bx-info-circle"></i> 
-                            Try: "PHP Developer", "John", "React 5 years", etc.
+                            Search across name, email, skills, role addressed, and current position
                         </small>
                     </div>
                 </div>
                 
-                <!-- Primary Filters -->
+                <!-- Primary Filters (Most Important) -->
                 <div class="row g-4 mb-4">
                     
-                    <!-- Skills Filter -->
-                    <div class="col-md-4">
+                    <!-- Lead Type (CRITICAL FILTER) -->
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">
+                            <i class="bx bx-target-lock text-danger"></i> 
+                            Lead Type <span class="text-danger">*</span>
+                        </label>
+                        <select id="lead_type_filter" name="lead_type" class="form-select" style="height: 45px;">
+                            <option value="">All Leads</option>
+                            <?php foreach ($leadTypes as $type): ?>
+                            <option value="<?php echo $type; ?>">
+                                <?php echo $type; ?>
+                            </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    
+                    <!-- Skills -->
+                    <div class="col-md-3">
                         <label class="form-label fw-semibold">
                             <i class="bx bx-code-alt text-primary"></i> 
-                            Skills <span class="text-danger">*</span>
+                            Skills
                         </label>
-                        <select id="skills_filter" 
-                                name="skills[]" 
+                        <select id="skill_set_filter" 
+                                name="skill_set[]" 
                                 class="form-select"
                                 multiple
                                 style="height: 45px;">
-                            <option value="">All Skills</option>
                             <?php foreach ($skillsList as $skill): ?>
                             <option value="<?php echo htmlspecialchars($skill); ?>">
                                 <?php echo htmlspecialchars($skill); ?>
@@ -249,30 +291,30 @@ ob_start();
                         <small class="text-muted">Hold Ctrl/Cmd for multiple</small>
                     </div>
                     
-                    <!-- Experience Range -->
-                    <div class="col-md-3">
+                    <!-- Experience -->
+                    <div class="col-md-2">
                         <label class="form-label fw-semibold">
                             <i class="bx bx-briefcase text-info"></i> 
                             Experience
                         </label>
                         <select id="experience_filter" name="experience" class="form-select" style="height: 45px;">
-                            <option value="">Any Experience</option>
+                            <option value="">Any</option>
                             <?php foreach ($experienceRanges as $key => $label): ?>
                             <option value="<?php echo $key; ?>"><?php echo $label; ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
                     
-                    <!-- Status -->
-                    <div class="col-md-3">
+                    <!-- Notice Period -->
+                    <div class="col-md-2">
                         <label class="form-label fw-semibold">
-                            <i class="bx bx-info-circle text-warning"></i> 
-                            Status
+                            <i class="bx bx-time text-warning"></i> 
+                            Availability
                         </label>
-                        <select id="status_filter" name="status" class="form-select" style="height: 45px;">
-                            <option value="">All Statuses</option>
-                            <?php foreach ($statusList as $status): ?>
-                            <option value="<?php echo $status; ?>"><?php echo $status; ?></option>
+                        <select id="notice_period_filter" name="notice_period" class="form-select" style="height: 45px;">
+                            <option value="">Any</option>
+                            <?php foreach ($noticePeriods as $key => $label): ?>
+                            <option value="<?php echo $key; ?>"><?php echo $label; ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
@@ -286,7 +328,7 @@ ob_start();
                     
                 </div>
                 
-                <!-- Advanced Filters (Collapsible) -->
+                <!-- Advanced Filters -->
                 <div class="row">
                     <div class="col-12">
                         <a class="btn btn-link text-decoration-none p-0" 
@@ -302,14 +344,27 @@ ob_start();
                     <hr class="my-3">
                     <div class="row g-3">
                         
-                        <!-- Location -->
+                        <!-- Lead Type Role -->
                         <div class="col-md-3">
                             <label class="form-label">
-                                <i class="bx bx-map"></i> Location
+                                <i class="bx bx-category"></i> Lead Role
                             </label>
-                            <select id="location_filter" name="location" class="form-select">
+                            <select id="lead_type_role_filter" name="lead_type_role" class="form-select">
+                                <option value="">All Roles</option>
+                                <?php foreach ($leadTypeRoles as $role): ?>
+                                <option value="<?php echo $role; ?>"><?php echo $role; ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        
+                        <!-- Current Location -->
+                        <div class="col-md-3">
+                            <label class="form-label">
+                                <i class="bx bx-map"></i> Current Location
+                            </label>
+                            <select id="current_location_filter" name="current_location" class="form-select">
                                 <option value="">Any Location</option>
-                                <?php foreach ($locations as $loc): ?>
+                                <?php foreach ($currentLocations as $loc): ?>
                                 <option value="<?php echo htmlspecialchars($loc); ?>">
                                     <?php echo htmlspecialchars($loc); ?>
                                 </option>
@@ -317,17 +372,75 @@ ob_start();
                             </select>
                         </div>
                         
-                        <!-- Notice Period -->
+                        <!-- Preferred Location -->
                         <div class="col-md-3">
                             <label class="form-label">
-                                <i class="bx bx-time"></i> Notice Period
+                                <i class="bx bx-map-pin"></i> Preferred Location
                             </label>
-                            <select id="notice_filter" name="notice_period" class="form-select">
+                            <select id="preferred_location_filter" name="preferred_location" class="form-select">
                                 <option value="">Any</option>
-                                <?php foreach ($noticePeriods as $period): ?>
-                                <option value="<?php echo $period; ?>"><?php echo $period; ?></option>
+                                <?php foreach ($preferredLocations as $loc): ?>
+                                <option value="<?php echo htmlspecialchars($loc); ?>">
+                                    <?php echo htmlspecialchars($loc); ?>
+                                </option>
                                 <?php endforeach; ?>
                             </select>
+                        </div>
+                        
+                        <!-- Work Auth Status -->
+                        <div class="col-md-3">
+                            <label class="form-label">
+                                <i class="bx bx-shield"></i> Work Authorization
+                            </label>
+                            <select id="work_auth_filter" name="work_auth_status" class="form-select">
+                                <option value="">All</option>
+                                <?php foreach ($workAuthStatuses as $wa): ?>
+                                <option value="<?php echo $wa['id']; ?>">
+                                    <?php echo htmlspecialchars($wa['status']); ?>
+                                </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        
+                        <!-- Working Status -->
+                        <div class="col-md-3">
+                            <label class="form-label">
+                                <i class="bx bx-building"></i> Working Status
+                            </label>
+                            <select id="working_status_filter" name="current_working_status" class="form-select">
+                                <option value="">All</option>
+                                <?php foreach ($workingStatuses as $status): ?>
+                                <option value="<?php echo $status; ?>"><?php echo $status; ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        
+                        <!-- Follow-up Status -->
+                        <div class="col-md-3">
+                            <label class="form-label">
+                                <i class="bx bx-phone"></i> Follow-up
+                            </label>
+                            <select id="follow_up_filter" name="follow_up" class="form-select">
+                                <option value="">All</option>
+                                <option value="Done">Done</option>
+                                <option value="Not Done">Not Done</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Date From -->
+                        <div class="col-md-3">
+                            <label class="form-label">
+                                <i class="bx bx-calendar"></i> Created From
+                            </label>
+                            <input type="date" id="date_from_filter" name="date_from" class="form-control">
+                        </div>
+                        
+                        <!-- Date To -->
+                        <div class="col-md-3">
+                            <label class="form-label">
+                                <i class="bx bx-calendar"></i> Created To
+                            </label>
+                            <input type="date" id="date_to_filter" name="date_to" class="form-control">
                         </div>
                         
                         <!-- Assigned To (Admin Only) -->
@@ -382,9 +495,11 @@ ob_start();
                 <table id="candidatesTable" class="table table-hover mb-0">
                     <thead class="table-light">
                         <tr>
-                            <th style="width: 45%"><strong>CANDIDATE</strong></th>
-                            <th style="width: 20%"><strong>CURRENT STATUS</strong></th>
-                            <th style="width: 35%" class="text-center"><strong>ACTION</strong></th>
+                            <th style="width: 40%"><strong>CANDIDATE</strong></th>
+                            <th style="width: 15%"><strong>LEAD TYPE</strong></th>
+                            <th style="width: 15%"><strong>ROLE</strong></th>
+                            <th style="width: 15%"><strong>LOCATION</strong></th>
+                            <th style="width: 15%" class="text-center"><strong>ACTION</strong></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -397,7 +512,7 @@ ob_start();
     
 </div>
 
-<!-- jQuery FIRST -->
+<!-- jQuery -->
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
 <!-- DataTables -->
@@ -413,10 +528,10 @@ ob_start();
 <script>
 $(document).ready(function() {
     
-    console.log('Initializing candidates list page...');
+    console.log('Initializing candidates list (ACTUAL schema version)...');
     
-    // Initialize Select2
-    $('#skills_filter').select2({
+    // Initialize Select2 for multi-select
+    $('#skill_set_filter').select2({
         theme: 'bootstrap-5',
         placeholder: 'Select skills...',
         allowClear: true,
@@ -431,34 +546,32 @@ $(document).ready(function() {
             url: 'handlers/candidate_data_handler.php',
             type: 'POST',
             data: function(d) {
-                // Auth token
                 d.token = '<?php echo Auth::token(); ?>';
                 
-                // Filters
+                // All filters based on actual schema
                 d.quick_search = $('#quick_search').val();
-                d.skills = $('#skills_filter').val();
+                d.skill_set = $('#skill_set_filter').val();
                 d.experience = $('#experience_filter').val();
-                d.status = $('#status_filter').val();
-                d.location = $('#location_filter').val();
-                d.notice_period = $('#notice_filter').val();
+                d.lead_type = $('#lead_type_filter').val();
+                d.lead_type_role = $('#lead_type_role_filter').val();
+                d.current_location = $('#current_location_filter').val();
+                d.preferred_location = $('#preferred_location_filter').val();
+                d.work_auth_status = $('#work_auth_filter').val();
+                d.current_working_status = $('#working_status_filter').val();
+                d.notice_period = $('#notice_period_filter').val();
+                d.follow_up = $('#follow_up_filter').val();
+                d.date_from = $('#date_from_filter').val();
+                d.date_to = $('#date_to_filter').val();
                 d.assigned_to = $('#assigned_filter').val();
                 
-                console.log('DataTables request data:', d);
+                console.log('Filter data:', d);
             },
             error: function(xhr, error, thrown) {
-                console.error('DataTables AJAX Error:', {
-                    status: xhr.status,
-                    statusText: xhr.statusText,
-                    responseText: xhr.responseText,
-                    error: error,
-                    thrown: thrown
-                });
-                
-                // Show user-friendly error
-                alert('Failed to load candidates. Error: ' + (xhr.responseJSON?.error || xhr.statusText));
+                console.error('DataTables Error:', {xhr, error, thrown});
+                alert('Failed to load. Error: ' + (xhr.responseJSON?.error || xhr.statusText));
             },
             dataSrc: function(json) {
-                console.log('DataTables response:', json);
+                console.log('Response:', json);
                 $('#results-count').text(json.recordsFiltered || 0);
                 return json.data;
             }
@@ -467,69 +580,68 @@ $(document).ready(function() {
             // Candidate Card
             { 
                 data: null,
-                orderable: true,
                 render: function(data, type, row) {
                     let skillBadges = '';
-                    if (row.skills) {
-                        const skills = row.skills.split(',').slice(0, 3);
+                    if (row.skill_set) {
+                        const skills = row.skill_set.split(',').slice(0, 3);
                         skills.forEach(skill => {
                             skillBadges += `<span class="badge bg-label-primary me-1">${skill.trim()}</span>`;
                         });
-                        const totalSkills = row.skills.split(',').length;
-                        if (totalSkills > 3) {
-                            skillBadges += `<span class="badge bg-label-secondary">+${totalSkills - 3}</span>`;
+                        if (row.skill_set.split(',').length > 3) {
+                            skillBadges += `<span class="badge bg-label-secondary">+${row.skill_set.split(',').length - 3}</span>`;
                         }
                     }
                     
+                    const initials = row.candidate_name ? row.candidate_name.split(' ').map(n => n[0]).join('').toUpperCase().substr(0, 2) : 'C';
+                    
                     return `
-                        <div class="candidate-card py-2">
-                            <div class="d-flex align-items-start">
-                                <div class="avatar avatar-lg me-3">
-                                    <span class="avatar-initial rounded-circle bg-label-primary fs-4">
-                                        ${row.first_name ? row.first_name.charAt(0).toUpperCase() : 'C'}
-                                    </span>
+                        <div class="d-flex align-items-start py-2">
+                            <div class="avatar avatar-lg me-3">
+                                <span class="avatar-initial rounded-circle bg-label-primary fs-4">
+                                    ${initials}
+                                </span>
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1 fw-bold">${row.candidate_name || 'N/A'}</h6>
+                                <div class="text-muted mb-2" style="font-size: 0.9rem;">
+                                    ${row.role_addressed || row.current_position || 'No role'} 
+                                    ${row.experience ? `• ${row.experience} yrs` : ''}
                                 </div>
-                                <div class="flex-grow-1">
-                                    <h6 class="mb-1 fw-bold">
-                                        ${row.name || 'No name'}
-                                    </h6>
-                                    <div class="text-muted mb-2" style="font-size: 0.9rem;">
-                                        ${row.job_title || 'No title'} 
-                                        ${row.experience_years ? `• ${row.experience_years} years` : ''}
-                                        ${row.current_location ? `• ${row.current_location}` : ''}
-                                    </div>
-                                    <div class="skills-container">
-                                        ${skillBadges || '<span class="text-muted">No skills</span>'}
-                                    </div>
-                                </div>
+                                <div>${skillBadges || '<span class="text-muted">No skills</span>'}</div>
                             </div>
                         </div>
                     `;
                 }
             },
             
-            // Status
+            // Lead Type (IMPORTANT!)
             { 
-                data: 'status',
+                data: 'lead_type',
                 render: function(data) {
-                    const statusConfig = {
-                        'New': { color: 'primary', icon: 'bx-user-plus' },
-                        'Screening': { color: 'info', icon: 'bx-search' },
-                        'Interview': { color: 'warning', icon: 'bx-user-voice' },
-                        'Offered': { color: 'success', icon: 'bx-envelope' },
-                        'Hired': { color: 'success', icon: 'bx-check-circle' },
-                        'Rejected': { color: 'danger', icon: 'bx-x-circle' },
-                        'On Hold': { color: 'secondary', icon: 'bx-pause-circle' }
+                    const colors = {
+                        'Hot': 'danger',
+                        'Warm': 'warning',
+                        'Cold': 'info',
+                        'Blacklist': 'dark'
                     };
-                    
-                    const config = statusConfig[data] || statusConfig['New'];
-                    
-                    return `
-                        <span class="badge bg-${config.color}" style="font-size: 0.9rem; padding: 8px 15px;">
-                            <i class="bx ${config.icon}"></i> 
-                            ${data || 'New'}
-                        </span>
-                    `;
+                    const color = colors[data] || 'secondary';
+                    return `<span class="badge bg-${color}" style="font-size: 0.9rem; padding: 8px 12px;">${data || 'N/A'}</span>`;
+                }
+            },
+            
+            // Role
+            { 
+                data: 'lead_type_role',
+                render: function(data) {
+                    return data || '<span class="text-muted">N/A</span>';
+                }
+            },
+            
+            // Location
+            { 
+                data: 'current_location',
+                render: function(data) {
+                    return data || '<span class="text-muted">N/A</span>';
                 }
             },
             
@@ -542,10 +654,8 @@ $(document).ready(function() {
                 render: function(data) {
                     return `
                         <a href="view.php?id=${data.can_code}" 
-                           class="btn btn-primary btn-lg px-4"
-                           style="font-size: 1rem; font-weight: 600;">
-                            <i class="bx bx-user-circle"></i> 
-                            View Profile
+                           class="btn btn-primary px-4">
+                            <i class="bx bx-user-circle"></i> View
                         </a>
                     `;
                 }
@@ -556,27 +666,21 @@ $(document).ready(function() {
         lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
         order: [[0, 'asc']],
         language: {
-            emptyTable: "No candidates found. Try adjusting filters.",
-            zeroRecords: "No matching candidates. Try different criteria.",
-            info: "Showing _START_ to _END_ of _TOTAL_ candidates",
-            infoEmpty: "No candidates",
-            infoFiltered: "(filtered from _MAX_ total)",
-            lengthMenu: "Show _MENU_ per page",
-            loadingRecords: "Loading candidates...",
-            processing: "Processing..."
+            emptyTable: "No candidates found",
+            zeroRecords: "No matches",
+            loadingRecords: "Loading..."
         }
     });
     
     // Search form
     $('#candidateSearchForm').on('submit', function(e) {
         e.preventDefault();
-        console.log('Search submitted');
         table.ajax.reload();
     });
     
     // Reset
     $('#candidateSearchForm').on('reset', function() {
-        $('#skills_filter').val(null).trigger('change');
+        $('#skill_set_filter').val(null).trigger('change');
         setTimeout(() => table.ajax.reload(), 100);
     });
     
@@ -584,57 +688,23 @@ $(document).ready(function() {
     $('#exportBtn').on('click', function() {
         const filters = {
             quick_search: $('#quick_search').val(),
-            skills: $('#skills_filter').val(),
+            skill_set: $('#skill_set_filter').val(),
             experience: $('#experience_filter').val(),
-            status: $('#status_filter').val(),
-            location: $('#location_filter').val(),
-            notice_period: $('#notice_filter').val(),
-            assigned_to: $('#assigned_filter').val(),
+            lead_type: $('#lead_type_filter').val(),
             token: '<?php echo Auth::token(); ?>'
         };
-        
         window.location.href = 'handlers/export_handler.php?' + $.param(filters);
     });
-    
-    console.log('Candidates list page initialized successfully');
 });
 </script>
 
 <style>
-.candidate-card {
-    transition: all 0.2s ease;
-}
-.candidate-card:hover {
-    background-color: #f8f9fa;
-    border-radius: 8px;
-    padding: 8px !important;
-}
-.table tbody tr:hover {
-    background-color: #f8f9fa;
-}
-.skills-container .badge {
-    font-size: 0.8rem;
-    padding: 4px 10px;
-    margin-bottom: 3px;
-}
-.btn-primary.btn-lg {
-    min-width: 150px;
-    box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
-}
-.btn-primary.btn-lg:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.4);
-}
-.select2-container--bootstrap-5 .select2-selection {
-    height: 45px !important;
-    padding-top: 8px;
-}
+.table tbody tr:hover { background-color: #f8f9fa; }
+.skills-container .badge { font-size: 0.8rem; padding: 4px 10px; }
+.select2-container--bootstrap-5 .select2-selection { height: 45px !important; padding-top: 8px; }
 </style>
 
 <?php
-// ============================================================================
-// LOAD LAYOUT
-// ============================================================================
 $pageContent = ob_get_clean();
 require_once ROOT_PATH . '/panel/includes/header.php';
 require_once ROOT_PATH . '/panel/includes/sidebar.php';

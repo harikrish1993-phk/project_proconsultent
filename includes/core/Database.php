@@ -39,26 +39,42 @@ class Database {
      * Get database connection
      * @throws Exception if connection is lost
      */
-    public function getConnection() {
-        if (!$this->connection || $this->connection->ping() === false) {
-            throw new Exception('DB connection lost');
-        }
-        return $this->connection;
+/**
+ * Get database connection
+ */
+public function getConnection() {
+    return $this->connection;
+}
+
+/**
+ * Prepare statement with error handling
+ */
+public function prepare($sql) {
+    if (!$this->connection) {
+        throw new Exception('No database connection');
     }
     
-    /**
-     * Prepare statement
-     */
-    public function prepare($sql) {
-        return $this->connection->prepare($sql);
+    $stmt = $this->connection->prepare($sql);
+    if (!$stmt) {
+        throw new Exception('Prepare failed: ' . $this->connection->error);
+    }
+    return $stmt;
+}
+
+/**
+ * Execute query with error handling
+ */
+public function query($sql) {
+    if (!$this->connection) {
+        throw new Exception('No database connection');
     }
     
-    /**
-     * Execute query
-     */
-    public function query($sql) {
-        return $this->connection->query($sql);
+    $result = $this->connection->query($sql);
+    if ($result === false) {
+        throw new Exception('Query failed: ' . $this->connection->error);
     }
+    return $result;
+}
     
     /**
      * Escape string

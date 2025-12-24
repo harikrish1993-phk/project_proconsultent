@@ -396,28 +396,28 @@ function requireLogin() {
     }
 }
 
-function requireAdmin() {
-    requireLogin();
-    $user = Auth::user();
-    if ($user['level'] !== 'admin') {
-        http_response_code(403);
-        die('Access denied. Admin privileges required.');
-    }
-}
+// function requireAdmin() {
+//     requireLogin();
+//     $user = Auth::user();
+//     if ($user['level'] !== 'admin') {
+//         http_response_code(403);
+//         die('Access denied. Admin privileges required.');
+//     }
+// }
 
-function requireLevel($requiredLevel) {
-    requireLogin();
-    $user = Auth::user();
-    $levels = ['user', 'recruiter', 'manager', 'admin'];
+// function requireLevel($requiredLevel) {
+//     requireLogin();
+//     $user = Auth::user();
+//     $levels = ['user', 'recruiter', 'manager', 'admin'];
     
-    $userLevelIndex = array_search($user['level'], $levels);
-    $requiredLevelIndex = array_search($requiredLevel, $levels);
+//     $userLevelIndex = array_search($user['level'], $levels);
+//     $requiredLevelIndex = array_search($requiredLevel, $levels);
     
-    if ($userLevelIndex < $requiredLevelIndex) {
-        http_response_code(403);
-        die('Access denied. Insufficient privileges.');
-    }
-}
+//     if ($userLevelIndex < $requiredLevelIndex) {
+//         http_response_code(403);
+//         die('Access denied. Insufficient privileges.');
+//     }
+// }
 
 function isAdmin() {
     $user = Auth::user();

@@ -97,7 +97,7 @@ define('SMTP_FROM_NAME', env('SMTP_FROM_NAME', COMPANY_NAME));
 
 // Paths
 define('UPLOAD_PATH', __DIR__ . '/../../uploads/');
-define('ROOT_PATH', __DIR__ . '/../../');
+// define('ROOT_PATH', __DIR__ . '/../../');
 
 // Roles
 define('USER_ROLE_ADMIN', 'admin');

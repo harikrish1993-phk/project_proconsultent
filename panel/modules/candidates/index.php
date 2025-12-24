@@ -1,553 +1,219 @@
 <?php
 /**
- * BULLETPROOF CANDIDATES INDEX
- * This page will ALWAYS load, even if:
- * - Database tables are missing
- * - Configuration is broken
- * - Auth fails
- * - Any other error occurs
+ * CANDIDATES MODULE - INDEX/ROUTER
+ * Location: panel/modules/candidates/index.php
  */
 
-// Enable all error display for debugging
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-ini_set('log_errors', 1);
+// Load bootstrap
+require_once __DIR__ . '/../_common.php';
 
-// Capture all errors
-$errors = [];
-$warnings = [];
-$success = [];
+error_log('Loading candidates/index.php - Action: ' . $action); // ADDED: Logging at entry
 
-// Step 1: Try to load common bootstrap
-$bootstrapLoaded = false;
-try {
-    if (file_exists(__DIR__ . '/../_common.php')) {
-        require_once __DIR__ . '/../_common.php';
-        $bootstrapLoaded = true;
-        $success[] = "✅ Bootstrap loaded successfully";
-    } else {
-        $errors[] = "❌ _common.php not found at: " . __DIR__ . '/../_common.php';
-    }
-} catch (Exception $e) {
-    $errors[] = "❌ Bootstrap error: " . $e->getMessage();
-} catch (Error $e) {
-    $errors[] = "❌ Bootstrap fatal error: " . $e->getMessage();
-}
+// Set page title
+$pageTitle = 'Candidates';
 
-// Step 2: Check if we're authenticated
-$isAuthenticated = false;
-$userData = [
-    'user_code' => 'UNKNOWN',
-    'name' => 'Unknown User',
-    'email' => 'unknown@example.com',
-    'level' => 'unknown'
-];
+// Get action
+$action = $_GET['action'] ?? 'list';
 
-if ($bootstrapLoaded) {
-    try {
-        if (class_exists('Auth') && method_exists('Auth', 'check')) {
-            $isAuthenticated = Auth::check();
-            if ($isAuthenticated) {
-                $success[] = "✅ User is authenticated";
-                $user = Auth::user();
-                if ($user) {
-                    $userData = [
-                        'user_code' => $user['user_code'] ?? 'N/A',
-                        'name' => $user['name'] ?? 'N/A',
-                        'email' => $user['email'] ?? 'N/A',
-                        'level' => $user['level'] ?? 'N/A'
-                    ];
-                }
-            } else {
-                $warnings[] = "⚠️ User not authenticated";
-            }
-        } else {
-            $warnings[] = "⚠️ Auth class not available";
-        }
-    } catch (Exception $e) {
-        $warnings[] = "⚠️ Auth check error: " . $e->getMessage();
-    }
+// Load UI components if available
+$ui_components_loaded = false;
+if (file_exists(ROOT_PATH . '/panel/components/ui_components.php') && is_readable(ROOT_PATH . '/panel/components/ui_components.php')) { // FIXED: Added is_readable
+    require_once ROOT_PATH . '/panel/components/ui_components.php';
+    $ui_components_loaded = true;
+    error_log('UI components loaded');
 } else {
-    $warnings[] = "⚠️ Cannot check authentication - bootstrap not loaded";
+    error_log('UI components not found or not readable');
+    echo '<div class="alert alert-warning">UI components not loaded - some features may be missing.</div>'; // ADDED: On-page alert, non-blocking
 }
 
-// Step 3: Try database connection
-$dbConnected = false;
-$dbError = '';
-$conn = null;
+// Include header
+$header_loaded = false;
+$header_path = ROOT_PATH . '/panel/includes/header.php';
+if (file_exists($header_path)) {
+    require_once $header_path;
+    $header_loaded = true;
+} else {
+    // Fallback: Simple header
+    ?>
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <title><?php echo $pageTitle; ?> - <?php echo defined('COMPANY_NAME') ? COMPANY_NAME : 'ProConsultancy'; ?></title>
+        <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { font-family: Arial, sans-serif; background: #f5f7fa; }
+            .page-wrapper { display: flex; min-height: 100vh; }
+            .main-content { flex: 1; margin-left: 260px; padding: 30px; }
+            .alert { padding: 15px; margin: 20px 0; border-radius: 6px; }
+            .alert-warning { background: #fff3cd; color: #856404; border-left: 4px solid #ffc107; }
+            .alert-error { background: #fee; color: #721c24; border-left: 4px solid #f00; }
+            .alert-info { background: #d1ecf1; color: #0c5460; border-left: 4px solid #17a2b8; }
+        </style>
+    </head>
+    <body>
+        <div class="page-wrapper">
+            <?php 
+            // $sidebar_path = ROOT_PATH . '/panel/includes/sidebar.php';
+            // if (file_exists($sidebar_path)) {
+            //     include $sidebar_path;
+            // } else {
+            //     echo '<div class="alert alert-error">Sidebar not found at: ' . htmlspecialchars($sidebar_path) . '</div>';
+            // }
+            ?>
+            <main class="main-content">
+    <?php
+    $header_loaded = true;
+}
 
+// Show breadcrumb if UI components loaded
+if ($ui_components_loaded && function_exists('renderBreadcrumb')) {
+    $breadcrumbs = ['Candidates' => 'index.php'];
+    if ($action !== 'list') {
+        $breadcrumbs[ucfirst($action)] = '#';
+    }
+    echo renderBreadcrumb($breadcrumbs);
+}
+
+// Page header
+echo '<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 12px; margin-bottom: 30px;">';
+echo '<h1 style="font-size: 24px; margin-bottom: 5px;">' . $pageTitle . '</h1>';
+echo '<p style="opacity: 0.9; font-size: 14px;">Manage your talent pool</p>';
+echo '</div>';
+
+// Route to appropriate page
 try {
-    if (class_exists('Database')) {
-        $db = Database::getInstance();
-        $conn = $db->getConnection();
-        if ($conn && !$conn->connect_error) {
-            $dbConnected = true;
-            $success[] = "✅ Database connected";
-        } else {
-            $dbError = $conn->connect_error ?? 'Connection failed';
-            $errors[] = "❌ Database connection error: " . $dbError;
-        }
-    } else {
-        $errors[] = "❌ Database class not found";
+    switch ($action) {
+        case 'create':
+        case 'add':
+            $create_page = __DIR__ . '/create.php';
+            if (file_exists($create_page) && is_readable($create_page)) {
+                include $create_page;
+                error_log('Create page included');
+            } else {
+                error_log('Create page not found: ' . $create_page);
+                echo '<div class="alert alert-warning">';
+                echo '<strong>⚠️ Page Not Implemented</strong><br>';
+                echo 'The create candidate page is not yet available.<br>';
+                echo 'Expected location: ' . htmlspecialchars($create_page);
+                echo '</div>';
+                echo '<p><a href="index.php" style="color: #667eea;">← Back to Candidates List</a></p>';
+            }
+            break;
+            
+        case 'edit':
+            $edit_page = __DIR__ . '/edit.php';
+            if (file_exists($edit_page) && is_readable($edit_page)) {
+                include $edit_page;
+                error_log('Edit page included');
+            } else {
+                error_log('Edit page not found: ' . $edit_page);
+                echo '<div class="alert alert-warning">';
+                echo '<strong>⚠️ Page Not Implemented</strong><br>';
+                echo 'The edit candidate page is not yet available.';
+                echo '</div>';
+            }
+            break;
+            
+        case 'view':
+            $view_page = __DIR__ . '/view.php';
+            if (file_exists($view_page) && is_readable($view_page)) {
+                include $view_page;
+                error_log('View page included');
+            } else {
+                error_log('View page not found: ' . $view_page);
+                echo '<div class="alert alert-warning">';
+                echo '<strong>⚠️ Page Not Implemented</strong><br>';
+                echo 'The view candidate page is not yet available.';
+                echo '</div>';
+            }
+            break;
+            
+        case 'assigned':
+            $assigned_page = __DIR__ . '/assigned.php';
+            if (file_exists($assigned_page) && is_readable($assigned_page)) {
+                include $assigned_page;
+                error_log('Assigned page included');
+            } else {
+                error_log('Assigned page not found: ' . $assigned_page);
+                echo '<div class="alert alert-warning">';
+                echo '<strong>⚠️ Page Not Implemented</strong><br>';
+                echo 'The assigned candidates page is not yet available.';
+                echo '</div>';
+            }
+            break;
+            
+        case 'pipeline':
+            $pipeline_page = __DIR__ . '/pipeline.php';
+            if (file_exists($pipeline_page) && is_readable($pipeline_page)) {
+                include $pipeline_page;
+                error_log('Pipeline page included');
+            } else {
+                error_log('Pipeline page not found: ' . $pipeline_page);
+                echo '<div class="alert alert-warning">';
+                echo '<strong>⚠️ Page Not Implemented</strong><br>';
+                echo 'The pipeline view page is not yet available.';
+                echo '</div>';
+            }
+            break;
+            
+        case 'list':
+        default:
+            $list_page = __DIR__ . '/list.php';
+            if (file_exists($list_page) && is_readable($list_page)) {
+                include $list_page;
+                error_log('List page included');
+            } else {
+                error_log('List page not found: ' . $list_page);
+                // Show placeholder if list.php doesn't exist
+                echo '<div class="alert alert-info">';
+                echo '<strong>ℹ️ Candidates Module</strong><br>';
+                echo 'The candidates list page is being set up.<br>';
+                echo 'Expected location: ' . htmlspecialchars($list_page);
+                echo '</div>';
+                
+                echo '<h3 style="margin-top: 30px;">Available Actions:</h3>';
+                echo '<ul style="margin-top: 15px; line-height: 2;">';
+                echo '<li><a href="?action=create" style="color: #667eea;">Add New Candidate</a></li>';
+                echo '<li><a href="?action=list" style="color: #667eea;">View All Candidates</a></li>';
+                echo '<li><a href="?action=assigned" style="color: #667eea;">Assigned Candidates</a></li>';
+                echo '<li><a href="?action=pipeline" style="color: #667eea;">Pipeline View</a></li>';
+                echo '</ul>';
+                
+                echo '<div style="margin-top: 30px; padding: 20px; background: white; border-radius: 8px;">';
+                echo '<h4>Debug Information:</h4>';
+                echo '<ul style="margin-top: 10px; font-family: monospace; font-size: 13px; line-height: 1.8;">';
+                echo '<li><strong>ROOT_PATH:</strong> ' . htmlspecialchars(ROOT_PATH) . '</li>';
+                echo '<li><strong>Current File:</strong> ' . htmlspecialchars(__FILE__) . '</li>';
+                echo '<li><strong>Action:</strong> ' . htmlspecialchars($action) . '</li>';
+                echo '<li><strong>User:</strong> ' . htmlspecialchars($current_user_name) . ' (' . htmlspecialchars($current_user_level) . ')</li>';
+                echo '</ul>';
+                echo '</div>';
+            }
+            break;
     }
 } catch (Exception $e) {
-    $dbError = $e->getMessage();
-    $errors[] = "❌ Database connection exception: " . $dbError;
+    echo '<div class="alert alert-error">';
+    echo '<strong>❌ Error Loading Page</strong><br>';
+    echo htmlspecialchars($e->getMessage());
+    echo '</div>';
+    error_log('Candidates module error: ' . $e->getMessage());
 }
 
-// Step 4: Check if tables exist
-$tables = [
-    'user' => false,
-    'candidates' => false,
-    'jobs' => false,
-    'job_applications' => false,
-    'companies' => false,
-    'tokens' => false,
-    'work_auth' => false,
-    'activity_log' => false
-];
-
-if ($dbConnected && $conn) {
-    foreach ($tables as $tableName => $exists) {
-        try {
-            $result = $conn->query("SHOW TABLES LIKE '$tableName'");
-            if ($result && $result->num_rows > 0) {
-                $tables[$tableName] = true;
-                $success[] = "✅ Table '$tableName' exists";
-            } else {
-                $warnings[] = "⚠️ Table '$tableName' does not exist";
-            }
-        } catch (Exception $e) {
-            $warnings[] = "⚠️ Cannot check table '$tableName': " . $e->getMessage();
-        }
-    }
+// Include footer
+$footer_path = ROOT_PATH . '/panel/includes/footer.php';
+if (file_exists($footer_path)) {
+    require_once $footer_path;
+} else {
+    // Fallback: Simple footer
+    ?>
+            </main>
+        </div>
+    </body>
+    </html>
+    <?php
 }
 
-// Step 5: Try to get candidate count (safely)
-$candidateCount = 0;
-$candidateSamples = [];
-
-if ($dbConnected && $tables['candidates']) {
-    try {
-        $result = $conn->query("SELECT COUNT(*) as total FROM candidates");
-        if ($result) {
-            $row = $result->fetch_assoc();
-            $candidateCount = $row['total'];
-            $success[] = "✅ Retrieved candidate count: $candidateCount";
-        }
-        
-        // Get sample candidates
-        $result = $conn->query("SELECT candidate_code, first_name, last_name, email, status FROM candidates LIMIT 5");
-        if ($result) {
-            while ($row = $result->fetch_assoc()) {
-                $candidateSamples[] = $row;
-            }
-        }
-    } catch (Exception $e) {
-        $warnings[] = "⚠️ Cannot retrieve candidates: " . $e->getMessage();
-    }
-}
-
-// Step 6: Get PHP and system info
-$systemInfo = [
-    'PHP Version' => PHP_VERSION,
-    'Server Software' => $_SERVER['SERVER_SOFTWARE'] ?? 'Unknown',
-    'Document Root' => $_SERVER['DOCUMENT_ROOT'] ?? 'Unknown',
-    'Script Filename' => __FILE__,
-    'Current Directory' => __DIR__,
-    'ROOT_PATH' => defined('ROOT_PATH') ? ROOT_PATH : 'Not defined',
-    'DB_HOST' => defined('DB_HOST') ? DB_HOST : 'Not defined',
-    'DB_NAME' => defined('DB_NAME') ? DB_NAME : 'Not defined',
-    'COMPANY_NAME' => defined('COMPANY_NAME') ? COMPANY_NAME : 'Not defined'
-];
-
+// ADDED: Log page completion
+error_log('Candidates/index.php loaded successfully');
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Candidates Module - Diagnostic Page</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        .header {
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-        }
-        .header h1 {
-            color: #667eea;
-            margin-bottom: 10px;
-        }
-        .header p {
-            color: #718096;
-        }
-        .card {
-            background: white;
-            border-radius: 12px;
-            padding: 25px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-        }
-        .card h2 {
-            color: #2d3748;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #e2e8f0;
-            padding-bottom: 10px;
-        }
-        .status-list {
-            list-style: none;
-        }
-        .status-list li {
-            padding: 12px 15px;
-            margin: 8px 0;
-            border-radius: 6px;
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-        }
-        .status-list li.success {
-            background: #f0fff4;
-            border-left: 4px solid #48bb78;
-            color: #22543d;
-        }
-        .status-list li.error {
-            background: #fff5f5;
-            border-left: 4px solid #e53e3e;
-            color: #742a2a;
-        }
-        .status-list li.warning {
-            background: #fffaf0;
-            border-left: 4px solid #ed8936;
-            color: #7c2d12;
-        }
-        .info-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 15px;
-        }
-        .info-box {
-            background: #f7fafc;
-            padding: 20px;
-            border-radius: 8px;
-            text-align: center;
-            border: 2px solid #e2e8f0;
-        }
-        .info-box.success { border-color: #48bb78; }
-        .info-box.error { border-color: #e53e3e; }
-        .info-box h3 {
-            font-size: 36px;
-            margin-bottom: 10px;
-        }
-        .info-box.success h3 { color: #48bb78; }
-        .info-box.error h3 { color: #e53e3e; }
-        .info-box p {
-            color: #718096;
-            font-size: 14px;
-        }
-        .btn {
-            display: inline-block;
-            padding: 12px 24px;
-            background: #667eea;
-            color: white;
-            text-decoration: none;
-            border-radius: 8px;
-            margin: 5px;
-            font-weight: 600;
-            transition: all 0.3s;
-        }
-        .btn:hover {
-            background: #5568d3;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-        }
-        .btn-success { background: #48bb78; }
-        .btn-success:hover { background: #38a169; }
-        .btn-danger { background: #e53e3e; }
-        .btn-danger:hover { background: #c53030; }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-        }
-        table th, table td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #e2e8f0;
-        }
-        table th {
-            background: #f7fafc;
-            font-weight: 600;
-            color: #2d3748;
-        }
-        table tr:hover {
-            background: #f7fafc;
-        }
-        .code-block {
-            background: #2d3748;
-            color: #e2e8f0;
-            padding: 15px;
-            border-radius: 8px;
-            overflow-x: auto;
-            font-family: 'Courier New', monospace;
-            font-size: 13px;
-            line-height: 1.6;
-        }
-        .badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-        .badge-success { background: #48bb78; color: white; }
-        .badge-error { background: #e53e3e; color: white; }
-        .badge-warning { background: #ed8936; color: white; }
-        .badge-info { background: #4299e1; color: white; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>🔍 ProConsultancy - System Diagnostic Page</h1>
-            <p>This page will ALWAYS load - even if there are errors</p>
-            <p style="margin-top: 10px; font-size: 12px; color: #a0aec0;">
-                Page loaded at: <?php echo date('Y-m-d H:i:s'); ?>
-            </p>
-        </div>
-
-        <!-- Status Overview -->
-        <div class="card">
-            <h2>📊 System Status Overview</h2>
-            <div class="info-grid">
-                <div class="info-box <?php echo $bootstrapLoaded ? 'success' : 'error'; ?>">
-                    <h3><?php echo $bootstrapLoaded ? '✅' : '❌'; ?></h3>
-                    <p>Bootstrap</p>
-                </div>
-                <div class="info-box <?php echo $isAuthenticated ? 'success' : 'error'; ?>">
-                    <h3><?php echo $isAuthenticated ? '✅' : '❌'; ?></h3>
-                    <p>Authentication</p>
-                </div>
-                <div class="info-box <?php echo $dbConnected ? 'success' : 'error'; ?>">
-                    <h3><?php echo $dbConnected ? '✅' : '❌'; ?></h3>
-                    <p>Database</p>
-                </div>
-                <div class="info-box success">
-                    <h3><?php echo $candidateCount; ?></h3>
-                    <p>Candidates</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Success Messages -->
-        <?php if (!empty($success)): ?>
-        <div class="card">
-            <h2>✅ Success Messages</h2>
-            <ul class="status-list">
-                <?php foreach ($success as $msg): ?>
-                <li class="success"><?php echo htmlspecialchars($msg); ?></li>
-                <?php endforeach; ?>
-            </ul>
-        </div>
-        <?php endif; ?>
-
-        <!-- Warnings -->
-        <?php if (!empty($warnings)): ?>
-        <div class="card">
-            <h2>⚠️ Warnings</h2>
-            <ul class="status-list">
-                <?php foreach ($warnings as $msg): ?>
-                <li class="warning"><?php echo htmlspecialchars($msg); ?></li>
-                <?php endforeach; ?>
-            </ul>
-        </div>
-        <?php endif; ?>
-
-        <!-- Errors -->
-        <?php if (!empty($errors)): ?>
-        <div class="card">
-            <h2>❌ Errors</h2>
-            <ul class="status-list">
-                <?php foreach ($errors as $msg): ?>
-                <li class="error"><?php echo htmlspecialchars($msg); ?></li>
-                <?php endforeach; ?>
-            </ul>
-        </div>
-        <?php endif; ?>
-
-        <!-- User Information -->
-        <div class="card">
-            <h2>👤 User Information</h2>
-            <table>
-                <tr>
-                    <th>Property</th>
-                    <th>Value</th>
-                </tr>
-                <tr>
-                    <td>User Code</td>
-                    <td><code><?php echo htmlspecialchars($userData['user_code']); ?></code></td>
-                </tr>
-                <tr>
-                    <td>Name</td>
-                    <td><?php echo htmlspecialchars($userData['name']); ?></td>
-                </tr>
-                <tr>
-                    <td>Email</td>
-                    <td><?php echo htmlspecialchars($userData['email']); ?></td>
-                </tr>
-                <tr>
-                    <td>Level</td>
-                    <td><span class="badge badge-info"><?php echo htmlspecialchars($userData['level']); ?></span></td>
-                </tr>
-            </table>
-        </div>
-
-        <!-- Database Tables Status -->
-        <div class="card">
-            <h2>🗄️ Database Tables Status</h2>
-            <table>
-                <tr>
-                    <th>Table Name</th>
-                    <th>Status</th>
-                </tr>
-                <?php foreach ($tables as $tableName => $exists): ?>
-                <tr>
-                    <td><code><?php echo htmlspecialchars($tableName); ?></code></td>
-                    <td>
-                        <?php if ($exists): ?>
-                            <span class="badge badge-success">✅ Exists</span>
-                        <?php else: ?>
-                            <span class="badge badge-error">❌ Missing</span>
-                        <?php endif; ?>
-                    </td>
-                </tr>
-                <?php endforeach; ?>
-            </table>
-        </div>
-
-        <!-- Sample Candidates -->
-        <?php if (!empty($candidateSamples)): ?>
-        <div class="card">
-            <h2>📋 Sample Candidates (First 5)</h2>
-            <table>
-                <tr>
-                    <th>Code</th>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>Status</th>
-                </tr>
-                <?php foreach ($candidateSamples as $candidate): ?>
-                <tr>
-                    <td><code><?php echo htmlspecialchars($candidate['candidate_code']); ?></code></td>
-                    <td><?php echo htmlspecialchars($candidate['first_name'] . ' ' . $candidate['last_name']); ?></td>
-                    <td><?php echo htmlspecialchars($candidate['email']); ?></td>
-                    <td><span class="badge badge-info"><?php echo htmlspecialchars($candidate['status']); ?></span></td>
-                </tr>
-                <?php endforeach; ?>
-            </table>
-        </div>
-        <?php endif; ?>
-
-        <!-- System Information -->
-        <div class="card">
-            <h2>⚙️ System Information</h2>
-            <table>
-                <?php foreach ($systemInfo as $key => $value): ?>
-                <tr>
-                    <td style="width: 30%; font-weight: 600;"><?php echo htmlspecialchars($key); ?></td>
-                    <td><code><?php echo htmlspecialchars($value); ?></code></td>
-                </tr>
-                <?php endforeach; ?>
-            </table>
-        </div>
-
-        <!-- Actions -->
-        <div class="card">
-            <h2>🚀 Available Actions</h2>
-            <div style="display: flex; flex-wrap: wrap; gap: 10px;">
-                <?php if ($dbConnected && $tables['candidates']): ?>
-                    <a href="create.php" class="btn btn-success">➕ Create Candidate</a>
-                    <a href="list.php" class="btn">📋 View List</a>
-                <?php endif; ?>
-                <a href="index.php" class="btn">🔄 Reload Page</a>
-                <a href="../../admin.php" class="btn">🏠 Dashboard</a>
-                <?php if ($isAuthenticated): ?>
-                    <a href="../../logout.php" class="btn btn-danger">🚪 Logout</a>
-                <?php else: ?>
-                    <a href="../../../login.php" class="btn">🔐 Login</a>
-                <?php endif; ?>
-            </div>
-        </div>
-
-        <!-- SQL to Create Missing Tables -->
-        <?php 
-        $missingTables = array_filter($tables, function($exists) { return !$exists; });
-        if (!empty($missingTables)): 
-        ?>
-        <div class="card">
-            <h2>🔧 SQL to Create Missing Tables</h2>
-            <p style="margin-bottom: 15px; color: #718096;">Copy and run this SQL to create missing tables:</p>
-            <div class="code-block">
-<?php if (!$tables['candidates']): ?>
-CREATE TABLE candidates (
-  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  candidate_code VARCHAR(50) UNIQUE NOT NULL,
-  first_name VARCHAR(100) NOT NULL,
-  last_name VARCHAR(100) NOT NULL,
-  email VARCHAR(255) NOT NULL,
-  phone VARCHAR(50),
-  status ENUM('new', 'active', 'screening', 'interviewing', 'hired', 'rejected') DEFAULT 'new',
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  INDEX idx_email (email)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-<?php endif; ?>
-
-<?php if (!$tables['work_auth']): ?>
-CREATE TABLE work_auth (
-  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  candidate_id INT UNSIGNED NOT NULL,
-  auth_status VARCHAR(100) NOT NULL,
-  country VARCHAR(100),
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (candidate_id) REFERENCES candidates(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-<?php endif; ?>
-            </div>
-        </div>
-        <?php endif; ?>
-
-        <!-- Debug Information -->
-        <div class="card">
-            <h2>🐛 Debug Information</h2>
-            <div class="code-block">
-Error Reporting: <?php echo error_reporting(); ?>
-
-Display Errors: <?php echo ini_get('display_errors'); ?>
-
-Log Errors: <?php echo ini_get('log_errors'); ?>
-
-Error Log: <?php echo ini_get('error_log') ?: 'Not set'; ?>
-
-Memory Limit: <?php echo ini_get('memory_limit'); ?>
-
-Max Execution Time: <?php echo ini_get('max_execution_time'); ?>s
-
-Upload Max Filesize: <?php echo ini_get('upload_max_filesize'); ?>
-
-Session Status: <?php echo session_status(); ?> (1=disabled, 2=active)
-            </div>
-        </div>
-    </div>
-</body>
-</html>

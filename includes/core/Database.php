@@ -12,14 +12,17 @@ class Database {
     private function __construct() {
         require_once __DIR__ . '/../config/config.php';
         
+        // error_log('Attempting DB connection: Host=' . DB_HOST); // ADDED: Logging
+        
         $this->connection = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
         
         if ($this->connection->connect_error) {
-            error_log("DB connect error: " . $this->connection->connect_error);
+            error_log("DB connect error: " . $this->connection->connect_error); // Already there
             throw new Exception('Database connection failed: ' . $this->connection->connect_error);
         }
         
         $this->connection->set_charset(DB_CHARSET);
+        error_log('DB connection successful');
     }
     
     /**

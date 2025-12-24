@@ -1,12 +1,9 @@
 <?php
 /**
  * MODULE FOOTER WRAPPER
- * File: panel/includes/footer.php
- * 
- * This file closes the main content area and adds any necessary scripts
+ * Location: panel/includes/footer.php
  */
 
-// Security check
 if (!defined('MODULE_BOOTSTRAP_LOADED')) {
     die('Direct access not permitted.');
 }
@@ -44,6 +41,13 @@ if (!defined('MODULE_BOOTSTRAP_LOADED')) {
             const alertDiv = document.createElement('div');
             alertDiv.className = 'alert alert-' + type;
             alertDiv.textContent = message;
+            
+            // Add close button
+            const closeBtn = document.createElement('button');
+            closeBtn.textContent = '×';
+            closeBtn.style.cssText = 'float: right; background: none; border: none; font-size: 20px; cursor: pointer;';
+            closeBtn.onclick = function() { alertDiv.remove(); };
+            alertDiv.insertBefore(closeBtn, alertDiv.firstChild);
             
             const main = document.querySelector('.main-content');
             if (main) {
@@ -113,6 +117,21 @@ if (!defined('MODULE_BOOTSTRAP_LOADED')) {
             const params = new URLSearchParams(data).toString();
             xhr.send(params);
         }
+        
+        // Auto-hide alerts
+        document.addEventListener('DOMContentLoaded', function() {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(function(alert) {
+                // Add close button if not exists
+                if (!alert.querySelector('button')) {
+                    const closeBtn = document.createElement('button');
+                    closeBtn.textContent = '×';
+                    closeBtn.style.cssText = 'float: right; background: none; border: none; font-size: 20px; cursor: pointer;';
+                    closeBtn.onclick = function() { alert.remove(); };
+                    alert.insertBefore(closeBtn, alert.firstChild);
+                }
+            });
+        });
     </script>
 </body>
 </html>

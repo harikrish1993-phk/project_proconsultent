@@ -6,9 +6,7 @@ $pageTitle = 'Candidates';
 $breadcrumbs = [
     'Candidates' => '#'
 ];
-// Include header
-require_once ROOT_PATH . '/panel/includes/header.php';
-require_once ROOT_PATH . '/panel/components/ui_components.php';
+
 
 // Display breadcrumb
 echo renderBreadcrumb($breadcrumbs);
@@ -27,7 +25,6 @@ try {
     }
 } catch (Exception $e) {
     echo '<div class="container-xxl flex-grow-1 container-p-y"><div class="alert alert-danger">Error: ' . $e->getMessage() . '</div></div>';
-    include __DIR__ . '/../../../includes/footer.php';
     exit();
 }
 ?>
@@ -91,4 +88,10 @@ document.querySelectorAll('.card-body').forEach(el => {
     });
 });
 </script>
-<?php include __DIR__ . '/../../../includes/footer.php'; ?>
+<?php
+$pageContent = ob_get_clean();
+require_once ROOT_PATH . '/panel/includes/header.php';
+require_once ROOT_PATH . '/panel/includes/sidebar.php';
+echo $pageContent;
+require_once ROOT_PATH . '/panel/includes/footer.php';
+?>

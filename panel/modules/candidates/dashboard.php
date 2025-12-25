@@ -6,9 +6,6 @@ $pageTitle = 'Candidates';
 $breadcrumbs = [
     'Candidates' => '#'
 ];
-// Include header
-require_once ROOT_PATH . '/panel/includes/header.php';
-require_once ROOT_PATH . '/panel/components/ui_components.php';
 
 // Display breadcrumb
 echo renderBreadcrumb($breadcrumbs);

@@ -436,6 +436,59 @@ if (DEBUG_MODE && (!empty($bootstrap_errors) || !empty($bootstrap_warnings))) {
     // Store for later output
     define('BOOTSTRAP_ERROR_HTML', $errorHtml);
 }
+/**
+ * Render breadcrumb navigation
+ * 
+ * @param array $items Breadcrumb items as associative arrays with 'label' and 'url' keys
+ * @param string $currentPage Optional current page title to append as non-link item
+ * @return string HTML for breadcrumb navigation
+ */
+function renderBreadcrumb($items = [], $currentPage = '') {
+    if (empty($items) && empty($currentPage)) return '';
+    
+    $html = '<nav aria-label="breadcrumb">
+                <ol class="breadcrumb">';
+    
+    // Handle different formats for backward compatibility
+    if (!empty($items) && !is_array(current($items))) {
+        // Old format: ['Home', 'Candidates']
+        $newItems = [];
+        $count = count($items);
+        foreach ($items as $key => $label) {
+            $url = ($key < $count - 1) ? '#' : '';
+            $newItems[] = ['label' => $label, 'url' => $url];
+        }
+        $items = $newItems;
+    }
+    
+    foreach ($items as $item) {
+        $label = $item['label'] ?? '';
+        $url = $item['url'] ?? '#';
+        $isActive = $item['active'] ?? false;
+        
+        $html .= '<li class="breadcrumb-item';
+        if ($isActive) $html .= ' active';
+        $html .= '" aria-current="' . ($isActive ? 'page' : 'location') . '">';
+        
+        if (!$isActive && $url) {
+            $html .= '<a href="' . htmlspecialchars($url) . '">' . htmlspecialchars($label) . '</a>';
+        } else {
+            $html .= htmlspecialchars($label);
+        }
+        
+        $html .= '</li>';
+    }
+    
+    // Add current page if specified
+    if ($currentPage) {
+        $html .= '<li class="breadcrumb-item active" aria-current="page">' . htmlspecialchars($currentPage) . '</li>';
+    }
+    
+    $html .= '</ol>
+             </nav>';
+    
+    return $html;
+}
 
 // End output buffering - content is now ready to be sent
 ob_end_flush();

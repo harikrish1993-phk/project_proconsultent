@@ -395,30 +395,10 @@ function requireLogin() {
         exit();
     }
 }
-
-// function requireAdmin() {
-//     requireLogin();
-//     $user = Auth::user();
-//     if ($user['level'] !== 'admin') {
-//         http_response_code(403);
-//         die('Access denied. Admin privileges required.');
-//     }
-// }
-
-// function requireLevel($requiredLevel) {
-//     requireLogin();
-//     $user = Auth::user();
-//     $levels = ['user', 'recruiter', 'manager', 'admin'];
-    
-//     $userLevelIndex = array_search($user['level'], $levels);
-//     $requiredLevelIndex = array_search($requiredLevel, $levels);
-    
-//     if ($userLevelIndex < $requiredLevelIndex) {
-//         http_response_code(403);
-//         die('Access denied. Insufficient privileges.');
-//     }
-// }
-
+  function verifyToken($token) {
+        return isset($_SESSION['csrf_token']) && 
+               hash_equals($_SESSION['csrf_token'], $token);
+    }
 function isAdmin() {
     $user = Auth::user();
     return $user && $user['level'] === 'admin';

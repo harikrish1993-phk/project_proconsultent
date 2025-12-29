@@ -9,10 +9,7 @@ $breadcrumbs = [
 ];
 // Include header
 require_once ROOT_PATH . '/panel/includes/header.php';
-require_once ROOT_PATH . '/panel/components/ui_components.php';
 
-// Display breadcrumb
-echo renderBreadcrumb($breadcrumbs);
 
 $id = intval($_GET['id'] ?? 0);
 if (!$id) {
@@ -94,16 +91,10 @@ try {
                         </div>
                     </div>
                     
-                    <div class="mb-3">
-                        <label class="form-label text-muted">Requirements</label>
-                        <div class="border rounded p-3 bg-light">
-                            <?php echo nl2br(htmlspecialchars($job['requirements'])); ?>
-                        </div>
-                    </div>
                     
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label class="form-label text-muted">Salary Range</label>
+                            <label class="form-label text-muted">Salary/Rate</label>
                             <p><?php echo number_format($job['salary_min'], 2) . ' - ' . number_format($job['salary_max'], 2); ?></p>
                         </div>
                         <div class="col-md-6 mb-3">

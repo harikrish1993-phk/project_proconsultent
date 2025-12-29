@@ -9,10 +9,7 @@ $breadcrumbs = [
 ];
 // Include header
 require_once ROOT_PATH . '/panel/includes/header.php';
-require_once ROOT_PATH . '/panel/components/ui_components.php';
 
-// Display breadcrumb
-echo renderBreadcrumb($breadcrumbs);
 
 // Assume $job_id is set from parent page (view/edit)
 if (!isset($job_id)) {

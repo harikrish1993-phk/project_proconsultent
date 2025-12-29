@@ -6,10 +6,7 @@
 require_once __DIR__ . '/../_common.php';
 $pageTitle = 'Candidates Database';
 $pageDescription = 'Manage and filter your talent pool efficiently';
-$breadcrumbs = [
-    ['label' => 'Dashboard', 'url' => 'index.php'],
-    ['label' => 'Add New']
-];
+
 // Initialize variables for filter options
 $skillsList = [];
 $leadTypes = ['Hot', 'Warm', 'Cold', 'Blacklist']; // Reordered by priority
@@ -59,9 +56,9 @@ try {
                         WHERE is_active = 1 
                         ORDER BY 
                             CASE status 
-                                WHEN 'EU Citizen' THEN 1 
+                                WHEN 'EU Citizen/PR holder' THEN 1 
                                 WHEN 'Work Permit' THEN 2 
-                                WHEN 'Visa Required' THEN 3 
+                                WHEN 'Sponsersip reqeuiws' THEN 3 
                                 ELSE 4 
                             END"
     ];
@@ -129,7 +126,7 @@ try {
     <!-- Page Header with Actions -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h4 class="fw-bold"><span class="text-muted fw-light"><i class="bx bx-user-circle me-1"></i>Candidates /</span> Database</h4>
+            <h4 class="fw-bold"><span class="text-muted fw-light"><i class="bx bx-user-circle me-1"></i>Candidates /</span> Libery</h4>
             <div class="d-flex align-items-center mt-1">
                 <span class="badge bg-label-primary me-2"><i class="bx bx-group me-1"></i><?= number_format($stats['total']) ?> Total Candidates</span>
                 <small class="text-muted">Last updated: <?= date('M d, Y H:i', strtotime($lastUpdate)) ?></small>
@@ -260,7 +257,7 @@ try {
                         </div>
                         <div class="form-text">
                             <i class="bx bx-info-circle me-1"></i>
-                            Try: "React developer", "AWS", "Project Manager", "Berlin", etc.
+                            Try: "React developer", "AWS", "Project Manager", "PHP", etc.
                         </div>
                     </div>
                     
@@ -476,7 +473,6 @@ try {
                             <th>SKILLS</th>
                             <th>EXPERIENCE</th>
                             <th>AVAILABILITY</th>
-                            <th>LOCATION</th>
                             <th>ACTIONS</th>
                         </tr>
                     </thead>

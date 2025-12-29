@@ -49,7 +49,7 @@
 </td>
 </tr>
 <tr>
-  <td colspan='2' style=" padding-left: 30px; font-size: 14px; "><strong>Nikunj Arya</strong></td>
+  <td colspan='2' style=" padding-left: 30px; font-size: 14px; "><strong>name</strong></td>
   </tr>
   <tr>
   <td colspan='2' style="padding-left: 30px;font-size: 12px;line-height: 10px;padding-bottom: 10px;">Director at <?php echo COMPANY_NAME_FULL; ?></td>

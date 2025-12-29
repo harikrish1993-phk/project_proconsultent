@@ -13,11 +13,7 @@ if (!$user || $user['role'] !== 'admin') {
 
 // Page configuration
 $pageTitle = 'Assignment Management';
-$breadcrumbs = [
-    ['label' => 'Dashboard', 'url' => 'index.php'],
-    ['label' => 'Candidates', 'url' => 'list.php'],
-    ['label' => 'Assignment Management', 'active' => true]
-];
+
 
 try {
     $conn = Database::getInstance()->getConnection();
@@ -28,7 +24,7 @@ try {
         SELECT user_code, full_name, email, COUNT(ca.can_code) as assigned_count
         FROM users u
         LEFT JOIN candidate_assignments ca ON ca.usercode = u.user_code
-        WHERE u.role = 'recruiter' AND u.is_active = 1
+        WHERE u.level = 'user' AND u.is_active = 1
         GROUP BY u.user_code
         ORDER BY full_name ASC
     ");

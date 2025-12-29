@@ -89,9 +89,5 @@ document.querySelectorAll('.card-body').forEach(el => {
 });
 </script>
 <?php
-$pageContent = ob_get_clean();
-require_once ROOT_PATH . '/panel/includes/header.php';
-require_once ROOT_PATH . '/panel/includes/sidebar.php';
-echo $pageContent;
+
 require_once ROOT_PATH . '/panel/includes/footer.php';
-?>

@@ -49,7 +49,7 @@ $clients_result = mysqli_query($conn, $clients_query);
             <h4 class="fw-bold mb-1">
                 <span class="text-muted fw-light">Jobs /</span> Create New Job
             </h4>
-            <p class="text-muted mb-0">Post a new freelance position</p>
+            <p class="text-muted mb-0">Post a new position</p>
         </div>
         <a href="index.php?action=list&ss_id=<?php echo $token; ?>" class="btn btn-secondary">
             <i class="bx bx-arrow-back me-1"></i> Back to Jobs

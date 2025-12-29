@@ -5,11 +5,6 @@
 require_once __DIR__ . '/../_common.php';
 
 $pageTitle = 'Add New Candidate';
-$breadcrumbs = [
-    ['label' => 'Dashboard', 'url' => 'index.php'],
-    ['label' => 'Candidates', 'url' => 'candidates.php?action=list'],
-    ['label' => 'Add New']
-];
 
 // // Display breadcrumb
 // echo renderBreadcrumb($breadcrumbs);
@@ -185,7 +180,7 @@ $conn->close();
                             
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label class="form-label">Current Employer</label>
+                                    <label class="form-label">Current Company/Employer</label>
                                     <input type="text" name="current_employer" class="form-control">
                                 </div>
                             </div>
@@ -242,34 +237,33 @@ $conn->close();
                         </div>
                     </div>
 
-                    <!-- TAB 3: Location & Availability -->
-                    <div class="tab-pane fade" id="tab-location" role="tabpanel">
+                    <!-- TAB 3: Location & Availability (location expectiong the dropdown (belgoium /nedharlands/france/luxmberg/india)) --> 
+                    <div class="tab-pane fade" id="tab-location" role="tabpanel">    
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label class="form-label">Current Location <span class="text-danger">*</span></label>
-                                    <input type="text" name="current_location" class="form-control required" required placeholder="City, Country">
+                                    <input type="text" name="current_location" class="form-control required" required placeholder="Country">
                                 </div>
                             </div>
                             
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label">Preferred Location</label>
-                                    <input type="text" name="preferred_location" class="form-control" placeholder="City, Country">
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label">Work Authorization <span class="text-danger">*</span></label>
-                                    <select name="work_auth_status" class="form-select required" required>
-                                        <option value="">Select authorization status</option>
-                                        <?php foreach ($work_auth_options as $option): ?>
-                                        <option value="<?= htmlspecialchars($option['value']) ?>"><?= htmlspecialchars($option['label']) ?></option>
-                                        <?php endforeach; ?>
+                        
+                                <!-- Work Authorization -->
+                                <div class="col-md-6">
+                                    <label for="work_authorization_status" class="form-label">
+                                        Work Authorization <span class="text-danger">*</span>
+                                    </label>
+                                    <select class="form-select" 
+                                            id="work_authorization_status" 
+                                            name="work_authorization_status"
+                                            required
+                                            data-rules="required">
+                                        <option value="">Select status...</option>
+                                        <option value="eu_citizen">EU Citizen/PR</option>
+                                        <option value="work_permit">Valid Work Permit</option>
+                                        <option value="requires_sponsorship">Requires Sponsorship</option>
                                     </select>
                                 </div>
-                            </div>
                             
                             <div class="col-md-6">
                                 <div class="mb-3">

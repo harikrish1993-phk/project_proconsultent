@@ -313,7 +313,7 @@ try {
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start">
                         <div class="me-2">
-                            <p class="text-muted mb-1">Current Salary</p>
+                            <p class="text-muted mb-1">Current Salary/Rate</p>
                             <h5 class="mb-0">€<?= number_format($candidate['current_salary'] ?? 0) ?></h5>
                         </div>
                         <div class="avatar flex-shrink-0">
@@ -330,7 +330,7 @@ try {
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start">
                         <div class="me-2">
-                            <p class="text-muted mb-1">Expected Salary</p>
+                            <p class="text-muted mb-1">Expected Salary/Rate</p>
                             <h5 class="mb-0">€<?= number_format($candidate['expected_salary'] ?? 0) ?></h5>
                         </div>
                         <div class="avatar flex-shrink-0">
@@ -407,10 +407,6 @@ try {
                                     <div class="col-md-6">
                                         <p class="mb-1 fw-semibold">Current Location</p>
                                         <p class="text-muted mb-0"><?= htmlspecialchars($candidate['current_location'] ?? '-') ?></p>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <p class="mb-1 fw-semibold">Preferred Location</p>
-                                        <p class="text-muted mb-0"><?= htmlspecialchars($candidate['preferred_location'] ?? '-') ?></p>
                                     </div>
                                 </div>
                             </div>
@@ -775,7 +771,6 @@ try {
                                 <tr>
                                     <th>Job Title</th>
                                     <th>Client</th>
-                                    <th>Location</th>
                                     <th>Applied Date</th>
                                     <th>Status</th>
                                     <th>Actions</th>
@@ -893,11 +888,7 @@ try {
                                         <p class="mb-1 fw-semibold">Notes</p>
                                         <p class="text-muted mb-0"><?= nl2br(htmlspecialchars($int['notes'] ?? 'No notes')) ?></p>
                                     </div>
-                                    
-                                    <div class="d-flex justify-content-end mt-3 gap-2">
-                                        <button class="btn btn-sm btn-outline-secondary">Join Meeting</button>
-                                        <button class="btn btn-sm btn-primary">Send Reminder</button>
-                                    </div>
+                                
                                 </div>
                             </div>
                         </div>

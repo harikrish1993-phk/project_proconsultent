@@ -4,7 +4,7 @@ $can_code = $id ?? null;
 if (!$can_code) return;
 
 try {
-    $stmt = $conn->prepare("SELECT * FROM call_logs WHERE can_code = ? ORDER BY call_date DESC");
+    $stmt = $conn->prepare("SELECT * FROM call_logs WHERE candidate_code = ? ORDER BY call_date DESC");
     $stmt->bind_param("s", $can_code);
     $stmt->execute();
     $logs = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
